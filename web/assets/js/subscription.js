@@ -219,29 +219,32 @@
     // Force Expiry Countdown Section to the top
     if (STATE.raw.expire > 0) {
       const countdownWrap = mkEl("div", "span-12 expiry-countdown-container");
-      countdownWrap.style.gridColumn = "span 12"; // Ensure it takes full width
+      countdownWrap.style.gridColumn = "span 12";
       countdownWrap.style.width = "100%";
       countdownWrap.innerHTML = `
-        <div class="countdown-header">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-          <span>Subscription Expires In</span>
+        <div class="countdown-header-premium">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+          <span class="countdown-title-text">Subscription Security Period</span>
         </div>
-        <div class="countdown-grid" style="display: flex; justify-content: center; gap: 12px; flex-wrap: wrap;">
-          <div class="countdown-item">
-            <div class="countdown-box" id="days">00</div>
-            <div class="countdown-label">Days</div>
+        <div class="countdown-grid-premium">
+          <div class="countdown-item-premium">
+            <div class="countdown-box-premium" id="days">00</div>
+            <div class="countdown-label-premium">Days</div>
           </div>
-          <div class="countdown-item">
-            <div class="countdown-box" id="hours">00</div>
-            <div class="countdown-label">Hours</div>
+          <div class="countdown-divider-premium">:</div>
+          <div class="countdown-item-premium">
+            <div class="countdown-box-premium" id="hours">00</div>
+            <div class="countdown-label-premium">Hours</div>
           </div>
-          <div class="countdown-item">
-            <div class="countdown-box" id="minutes">00</div>
-            <div class="countdown-label">Minutes</div>
+          <div class="countdown-divider-premium">:</div>
+          <div class="countdown-item-premium">
+            <div class="countdown-box-premium" id="minutes">00</div>
+            <div class="countdown-label-premium">Minutes</div>
           </div>
-          <div class="countdown-item">
-            <div class="countdown-box" id="seconds">00</div>
-            <div class="countdown-label">Seconds</div>
+          <div class="countdown-divider-premium">:</div>
+          <div class="countdown-item-premium">
+            <div class="countdown-box-premium" id="seconds">00</div>
+            <div class="countdown-label-premium">Seconds</div>
           </div>
         </div>
       `;
@@ -424,6 +427,117 @@
     wrap.appendChild(grid);
     return wrap;
   }
+
+  /* Expiry Countdown Styles Integrated into Premium Theme */
+  const countdownStyles = `
+  .expiry-countdown-container {
+    background: var(--bg-card);
+    border: 1px solid var(--card-border);
+    padding: 24px;
+    margin-bottom: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .countdown-header-premium {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--accent);
+    filter: drop-shadow(0 0 8px var(--accent-glow));
+  }
+
+  .countdown-title-text {
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+  }
+
+  .countdown-grid-premium {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    width: 100%;
+  }
+
+  .countdown-item-premium {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    min-width: 70px;
+  }
+
+  .countdown-box-premium {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--card-border);
+    color: var(--text-primary);
+    font-family: 'SF Mono', 'Roboto Mono', monospace;
+    font-size: 1.8rem;
+    font-weight: 800;
+    padding: 10px 15px;
+    border-radius: 12px;
+    min-width: 65px;
+    text-align: center;
+    box-shadow: inset 0 2px 10px rgba(0,0,0,0.5);
+    text-shadow: 0 0 15px var(--accent-glow);
+    transition: all 0.3s ease;
+  }
+
+  body.s-light .countdown-box-premium {
+    background: rgba(255, 255, 255, 0.5);
+    color: var(--text-primary);
+    box-shadow: inset 0 2px 5px rgba(0,0,0,0.1);
+    text-shadow: none;
+  }
+
+  .countdown-divider-premium {
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--accent);
+    padding-top: 10px;
+    align-self: flex-start;
+    display: flex;
+    align-items: center;
+    height: 65px;
+  }
+
+  .countdown-label-premium {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  @media (max-width: 600px) {
+    .countdown-divider-premium {
+      display: none;
+    }
+    .countdown-grid-premium {
+      gap: 10px;
+    }
+    .countdown-box-premium {
+      font-size: 1.4rem;
+      min-width: 50px;
+      padding: 8px 10px;
+    }
+  }
+  `;
+
+  if (!document.getElementById('countdown-styles')) {
+    const styleSheet = document.createElement("style");
+    styleSheet.id = "countdown-styles";
+    styleSheet.innerText = countdownStyles;
+    document.head.appendChild(styleSheet);
+  }
+
   function startStatsPolling() {
     if (window.statsPollingActive) return;
     window.statsPollingActive = true;
