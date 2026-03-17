@@ -137,15 +137,23 @@ sed -i "s|__VERSION__|$TIMESTAMP|g" "$ASSETS_PATH/js/subscription.js"
 
 chmod -R 755 "$BASE_PATH"
 
-echo -e "${BLUE}Injecting Persistence (Update Survival)...${NC}"
+echo -e "${BLUE}Injecting Persistence (Update Survival) & Port Optimization...${NC}"
 SERVICE_FILE="/etc/systemd/system/x-ui.service"
 if [[ -f "$SERVICE_FILE" ]]; then
     if ! grep -q "XUI_DEBUG=true" "$SERVICE_FILE"; then
         sed -i '/\[Service\]/a Environment="XUI_DEBUG=true"' "$SERVICE_FILE"
         echo -e "${GREEN}Persistence injected successfully!${NC}"
-    else
-        echo -e "${BLUE}Persistence already enabled.${NC}"
     fi
+fi
+
+# Optimization: Ensure 2083 is open in firewall
+if command -v ufw &> /dev/null; then
+    ufw allow 2083/tcp >/dev/null 2>&1
+    echo -e "${GREEN}Firewall: Port 2083 allowed in UFW${NC}"
+elif command -v firewall-cmd &> /dev/null; then
+    firewall-cmd --permanent --add-port=2083/tcp >/dev/null 2>&1
+    firewall-cmd --reload >/dev/null 2>&1
+    echo -e "${GREEN}Firewall: Port 2083 allowed in Firewalld${NC}"
 fi
 
 # --- STATS SERVICE DEPLOYMENT ---
