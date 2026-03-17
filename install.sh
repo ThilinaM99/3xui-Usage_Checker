@@ -34,6 +34,11 @@ assert_contains() {
     fi
 }
 
+url_exists() {
+    local url="$1"
+    curl -fsI "$url" >/dev/null 2>&1
+}
+
 if [ "$EUID" -ne 0 ]; then
   echo -e "${RED}Please run as root (sudo bash install.sh)${NC}"
   exit
@@ -60,6 +65,17 @@ fi
 
 echo -e "${BLUE}Using branch: ${GREEN}${BRANCH}${NC}"
 REPO_URL="https://raw.githubusercontent.com/ThilinaM99/3xui-Usage_Checker/${BRANCH}"
+
+# Fallback: some repos still use 'master' or may not have assets on the selected branch
+if ! url_exists "$REPO_URL/web/assets/js/subscription.js"; then
+    ALT_BRANCH="master"
+    ALT_URL="https://raw.githubusercontent.com/ThilinaM99/3xui-Usage_Checker/${ALT_BRANCH}"
+    if url_exists "$ALT_URL/web/assets/js/subscription.js"; then
+        BRANCH="$ALT_BRANCH"
+        REPO_URL="$ALT_URL"
+        echo -e "${YELLOW}⚠️  Falling back to branch: ${GREEN}${BRANCH}${NC}"
+    fi
+fi
 
 mkdir -p "$ASSETS_PATH/js"
 mkdir -p "$ASSETS_PATH/css"
