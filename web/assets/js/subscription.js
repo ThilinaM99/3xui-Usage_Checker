@@ -163,20 +163,22 @@
     if (!window.networkBg) {
       window.networkBg = new NeuralNetwork();
     }
-    if (STATE.raw.expire > 0) {
+    if (STATE.raw.expire > 0 && !window.expiryInterval) {
       startExpiryCountdown();
     }
   }
 
   function startExpiryCountdown() {
-    const daysEl = document.getElementById("days");
-    const hoursEl = document.getElementById("hours");
-    const minutesEl = document.getElementById("minutes");
-    const secondsEl = document.getElementById("seconds");
-
-    if (!daysEl || !hoursEl || !minutesEl || !secondsEl) return;
+    if (window.expiryInterval) return;
 
     function update() {
+      const daysEl = document.getElementById("days");
+      const hoursEl = document.getElementById("hours");
+      const minutesEl = document.getElementById("minutes");
+      const secondsEl = document.getElementById("seconds");
+
+      if (!daysEl || !hoursEl || !minutesEl || !secondsEl) return;
+
       const now = Date.now();
       const diff = STATE.raw.expire - now;
 
@@ -185,6 +187,10 @@
         hoursEl.textContent = "00";
         minutesEl.textContent = "00";
         secondsEl.textContent = "00";
+        if (window.expiryInterval) {
+          clearInterval(window.expiryInterval);
+          window.expiryInterval = null;
+        }
         return;
       }
 
@@ -200,7 +206,7 @@
     }
 
     update();
-    setInterval(update, 1000);
+    window.expiryInterval = setInterval(update, 1000);
   }
   function renderApp() {
     const old = getEl("app-root");
@@ -210,15 +216,17 @@
     app.appendChild(renderHeader());
     const grid = mkEl("div", "dashboard-grid");
 
-    // Add Expiry Countdown Section to the grid if expiry exists
+    // Force Expiry Countdown Section to the top
     if (STATE.raw.expire > 0) {
       const countdownWrap = mkEl("div", "span-12 expiry-countdown-container");
+      countdownWrap.style.gridColumn = "span 12"; // Ensure it takes full width
+      countdownWrap.style.width = "100%";
       countdownWrap.innerHTML = `
         <div class="countdown-header">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
           <span>Subscription Expires In</span>
         </div>
-        <div class="countdown-grid">
+        <div class="countdown-grid" style="display: flex; justify-content: center; gap: 12px; flex-wrap: wrap;">
           <div class="countdown-item">
             <div class="countdown-box" id="days">00</div>
             <div class="countdown-label">Days</div>
@@ -242,6 +250,7 @@
 
     grid.appendChild(renderUsageCard());
     grid.appendChild(renderInfoCard());
+    // Configuration Links section removed
     grid.appendChild(renderStatsGrid());
     grid.appendChild(renderInfrastructureSection());
     app.appendChild(grid);
@@ -252,6 +261,7 @@
     app.appendChild(renderQRModal());
     app.appendChild(renderToast());
     document.body.appendChild(app);
+
     requestAnimationFrame(() => {
       setTimeout(() => {
         document.body.classList.add("ready");
@@ -335,20 +345,6 @@
     up.innerHTML = `<div class="stat-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--theme-up)"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg></div><div class="stat-value" id="up-total-val">0 B</div><div class="stat-label">${t("upload")}</div>`;
     const down = mkEl("div", "stat-mini");
     down.innerHTML = `<div class="stat-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--theme-down)"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg></div><div class="stat-value" id="down-total-val">0 B</div><div class="stat-label">${t("download")}</div>`;
-    const lastOnline = mkEl("div", "stat-mini");
-    let lastOnlineText = "Never";
-    if (STATE.raw.lastOnline > 0) {
-      const now = Date.now(),
-        diff = now - STATE.raw.lastOnline,
-        minutes = Math.floor(diff / (1000 * 60)),
-        hours = Math.floor(diff / (1000 * 60 * 60)),
-        days = Math.floor(diff / (1000 * 60 * 60 * 24));
-      if (minutes < 1) lastOnlineText = "Just now";
-      else if (minutes < 60) lastOnlineText = minutes + "m ago";
-      else if (hours < 24) lastOnlineText = hours + "h ago";
-      else lastOnlineText = days + "d ago";
-    }
-    lastOnline.innerHTML = `<div class="stat-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--status-online)"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg></div><div class="stat-value">${lastOnlineText}</div><div class="stat-label">Last Online</div>`;
     card.appendChild(up);
     card.appendChild(down);
     card.appendChild(rem);
@@ -417,10 +413,10 @@
     cpuCard.innerHTML = `<div class="stat-mini-icon" style="color:var(--theme-cpu)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 1v3M15 1v3M9 20v3M15 20v3M20 9h3M20 14h3M1 9h3M1 14h3"/></svg></div><div class="stat-mini-content"><div class="stat-mini-label">CPU Usage</div><div class="stat-mini-value"><span id="cpu-val">0</span>%</div></div>`;
     const ramCard = mkEl("div", "stat-card-mini");
     ramCard.innerHTML = `<div class="stat-mini-icon" style="color:var(--theme-ram)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 6h16M4 12h16M4 18h16M8 2v20M12 2v20M16 2v20"/></svg></div><div class="stat-mini-content"><div class="stat-mini-label">Memory</div><div class="stat-mini-value"><span id="ram-val">0</span>%</div></div>`;
-    const uploadCard = mkEl("div", "stat-card-mini");
-    uploadCard.innerHTML = `<div class="stat-mini-icon" style="color:var(--theme-up)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg></div><div class="stat-mini-content"><div class="stat-mini-label">Upload</div><div class="stat-mini-value" id="upload-val">0 KB/s</div></div>`;
     const downloadCard = mkEl("div", "stat-card-mini");
     downloadCard.innerHTML = `<div class="stat-mini-icon" style="color:var(--theme-down)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="8 12 12 16 16 12"/><line x1="12" y1="16" x2="12" y2="3"/><path d="M20.88 18.09A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg></div><div class="stat-mini-content"><div class="stat-mini-label">Download</div><div class="stat-mini-value" id="download-val">0 KB/s</div></div>`;
+    const uploadCard = mkEl("div", "stat-card-mini");
+    uploadCard.innerHTML = `<div class="stat-mini-icon" style="color:var(--theme-up)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg></div><div class="stat-mini-content"><div class="stat-mini-label">Upload</div><div class="stat-mini-value" id="upload-val">0 KB/s</div></div>`;
     grid.appendChild(cpuCard);
     grid.appendChild(ramCard);
     grid.appendChild(uploadCard);

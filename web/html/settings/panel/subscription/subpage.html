@@ -246,32 +246,6 @@
                     </template>
 
                     <a-form layout="vertical">
-                        <!-- Expiry Countdown Section -->
-                        <div v-if="app.expireMs > 0" class="expiry-countdown-container">
-                            <div class="countdown-header">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-                                <span>Subscription Expires In</span>
-                            </div>
-                            <div class="countdown-grid">
-                                <div class="countdown-item">
-                                    <div class="countdown-box" id="days">00</div>
-                                    <div class="countdown-label">Days</div>
-                                </div>
-                                <div class="countdown-item">
-                                    <div class="countdown-box" id="hours">00</div>
-                                    <div class="countdown-label">Hours</div>
-                                </div>
-                                <div class="countdown-item">
-                                    <div class="countdown-box" id="minutes">00</div>
-                                    <div class="countdown-label">Minutes</div>
-                                </div>
-                                <div class="countdown-item">
-                                    <div class="countdown-box" id="seconds">00</div>
-                                    <div class="countdown-label">Seconds</div>
-                                </div>
-                            </div>
-                        </div>
-
                         <a-form-item>
                             <a-space direction="vertical" align="center">
                                 <a-row type="flex" :gutter="[8,8]" justify="center" style="width:100%">
