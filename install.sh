@@ -36,7 +36,7 @@ assert_contains() {
 
 url_exists() {
     local url="$1"
-    curl -fsI "$url" >/dev/null 2>&1
+    curl -fsSL --range 0-0 "$url" -o /dev/null >/dev/null 2>&1
 }
 
 if [ "$EUID" -ne 0 ]; then
