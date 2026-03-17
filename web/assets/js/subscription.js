@@ -209,9 +209,39 @@
     app.id = "app-root";
     app.appendChild(renderHeader());
     const grid = mkEl("div", "dashboard-grid");
+
+    // Add Expiry Countdown Section to the grid if expiry exists
+    if (STATE.raw.expire > 0) {
+      const countdownWrap = mkEl("div", "span-12 expiry-countdown-container");
+      countdownWrap.innerHTML = `
+        <div class="countdown-header">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+          <span>Subscription Expires In</span>
+        </div>
+        <div class="countdown-grid">
+          <div class="countdown-item">
+            <div class="countdown-box" id="days">00</div>
+            <div class="countdown-label">Days</div>
+          </div>
+          <div class="countdown-item">
+            <div class="countdown-box" id="hours">00</div>
+            <div class="countdown-label">Hours</div>
+          </div>
+          <div class="countdown-item">
+            <div class="countdown-box" id="minutes">00</div>
+            <div class="countdown-label">Minutes</div>
+          </div>
+          <div class="countdown-item">
+            <div class="countdown-box" id="seconds">00</div>
+            <div class="countdown-label">Seconds</div>
+          </div>
+        </div>
+      `;
+      grid.appendChild(countdownWrap);
+    }
+
     grid.appendChild(renderUsageCard());
     grid.appendChild(renderInfoCard());
-    grid.appendChild(renderNodesList());
     grid.appendChild(renderStatsGrid());
     grid.appendChild(renderInfrastructureSection());
     app.appendChild(grid);
@@ -323,7 +353,6 @@
     card.appendChild(down);
     card.appendChild(rem);
     card.appendChild(exp);
-    card.appendChild(lastOnline);
     return card;
   }
   function renderNodesList() {
