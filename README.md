@@ -14,7 +14,7 @@
 ## ✨ Features 
 
 - **🎨 UI/UX**:
-Dark/light theme, glassmorphism,smooth transitions, toast notifications, Animated Background(NEW), Adaptive themes(NEW)
+Dark/light theme, glassmorphism, smooth transitions, toast notifications, Animated Background(NEW), Adaptive themes(NEW)
 - **📊 Dashboard**: Subscription info, config links, QR codes, status indicators
 - **📡 Server Stats (NEW)**: Real-time CPU/RAM/Network monitoring
 - **🔧 Installation**: One-line install, systemd integration
@@ -46,12 +46,4 @@ bash <(curl -Ls https://raw.githubusercontent.com/ThilinaM99/3xui-Usage_Checker/
 ## 👨‍💻 Author
 Made with ❤️ by TMS-VPN 𖹭.ᐟ
 
-## 📄 License
-This project is licensed under the **Attribution-NonCommercial-ShareAlike 4.0 International (CC BY-NC-SA 4.0)**.
-
-[![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc-sa/4.0/)
-
-- **Attribution**: You must give appropriate credit.
-- **NonCommercial**: You may **not** use the material for commercial purposes.
-- **ShareAlike**: If you remix, transform, or build upon the material, you must distribute your contributions under the same license.
 
