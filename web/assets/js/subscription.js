@@ -519,9 +519,6 @@
   }
 
   .mini-map-container {
-    position: absolute;
-    top: 10px;
-    right: 10px;
     width: 80px;
     height: 60px;
     background: rgba(0, 0, 0, 0.2);
@@ -529,7 +526,41 @@
     border: 1px solid var(--card-border);
     overflow: hidden;
     pointer-events: none;
+    margin-left: auto;
+    flex-shrink: 0;
   }
+
+  .infra-card {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 16px;
+    padding: 16px;
+    transition: all 0.3s var(--ease-out);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .infra-details {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .infra-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+
+  @media (max-width: 900px) {
+    .infra-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
 
   #mini-map {
     width: 100%;
