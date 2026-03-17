@@ -297,7 +297,7 @@
     dispName = cleanupName(dispName);
     const s = getStatusInfo();
     const profile = mkEl("div", "user-profile");
-    profile.innerHTML = `<div class="avatar">${dispName.substring(0, 1).toUpperCase()}</div><div class="user-text-group"><div class="dashboard-title">User Dashboard</div><div class="user-main-row"><div class="username-display" data-text="${dispName}">${dispName}</div><div class="status-indicator-wrap"><span class="status-text-inline" style="color: ${s.color}">${s.label}</span><div class="status-dot-inline" style="background:${s.color}; box-shadow: 0 0 10px ${s.color}; border-color: ${s.color}44;"></div></div></div></div>`;
+    profile.innerHTML = `<div class="avatar-premium"><img src="https://i.ibb.co/v4WPzWBb/image.png" alt="T" class="logo-img"></div><div class="user-text-group"><div class="dashboard-title">User Dashboard</div><div class="user-main-row"><div class="username-display" data-text="${dispName}">${dispName}</div><div class="status-indicator-wrap"><span class="status-text-inline" style="color: ${s.color}">${s.label}</span><div class="status-dot-inline" style="background:${s.color}; box-shadow: 0 0 10px ${s.color}; border-color: ${s.color}44;"></div></div></div></div>`;
     const ctrls = mkEl("div", "controls");
     ctrls.style.position = "relative";
     ctrls.style.zIndex = "200";
@@ -495,6 +495,41 @@
     color: var(--text-primary);
     box-shadow: inset 0 2px 5px rgba(0,0,0,0.1);
     text-shadow: none;
+  }
+
+  .avatar-premium {
+    width: 64px;
+    height: 64px;
+    border-radius: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    background: rgba(var(--node-color, 99, 102, 241), 0.1);
+    border: 1px solid var(--card-border);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s var(--ease-out);
+  }
+
+  .avatar-premium:hover {
+    transform: scale(1.05) rotate(2deg);
+    border-color: var(--accent);
+    box-shadow: 0 12px 32px var(--accent-glow);
+  }
+
+  .logo-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: drop-shadow(0 0 4px rgba(0,0,0,0.2));
+  }
+
+  @media (max-width: 600px) {
+    .avatar-premium {
+      width: 52px;
+      height: 52px;
+      border-radius: 14px;
+    }
   }
 
   .countdown-divider-premium {
