@@ -6,10 +6,28 @@ GREEN='\033[0;32m'
 BLUE='\033[0;34m'
 NC='\033[0m'
 
-echo -e "${BLUE}💎 Starting TMS-VPN Subscription Theme Installation...${NC}"
+function show_art() {
+    echo -e "${BLUE}"
+    echo -e " ██████╗███████╗██████╗ ██╗███╗   ██╗ ██████╗ "
+    echo -e "██╔════╝██╔════╝██╔══██╗██║████╗  ██║██╔════╝ "
+    echo -e "██║     █████╗  ██████╔╝██║██╔██╗ ██║██║  ███╗"
+    echo -e "██║     ██╔══╝  ██╔══██╗██║██║╚██╗██║██║   ██║"
+    echo -e "╚██████╗███████╗██║  ██║██║██║ ╚████║╚██████╔╝"
+    echo -e " ╚═════╝╚══════╝╚═╝  ╚═╝╚═╝╚═╝  ╚═══╝ ╚═════╝ "
+    echo -e "                                              "
+    echo -e "      💎 TMS-VPN PREMIUM SUBSCRIPTION 💎      "
+    echo -e "           Installation v${VERSION}           "
+    echo -e "${NC}"
+}
+
+show_art
+sleep 1
+echo -e "${BLUE}🚀 Starting TMS-VPN Subscription Theme Installation...${NC}"
+echo -e "${RED}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo -e "${RED}⚠️  NOTICE: This project is for EDUCATIONAL PURPOSES ONLY.${NC}"
-echo -e "${RED}⚠️  The user is solely responsible for any consequences or damages.${NC}"
+echo -e "${RED}⚠️  The user is solely responsible for any consequences.${NC}"
 echo -e "${RED}⚠️  USE AT YOUR OWN RISK.${NC}"
+echo -e "${RED}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 sleep 2
 
 if [ "$EUID" -ne 0 ]; then

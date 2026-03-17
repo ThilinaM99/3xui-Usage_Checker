@@ -259,7 +259,7 @@
     app.appendChild(grid);
     const footer = mkEl("div", "custom-footer");
     const footerText = "Powered with ❤️ by TMS-VPN";
-    footer.innerHTML = `<div class="footer-glitch-wrap" data-text="${footerText}">Powered with <span class="heart-pulse">❤️</span> by&nbsp;<a class="footer-link" href="https://github.com/ThilinaM99/3xui-Usage_Checker/" target="_blank" rel="noopener noreferrer">TMS-VPN</a></div>`;
+    footer.innerHTML = `<div class="footer-glitch-wrap" data-text="${footerText}">Powered with <span class="heart-pulse">❤️</span> by&nbsp;<a class="footer-link" href="https://github.com/ThilinaM99/3xui-Usage_Checker/" target="_blank" rel="noopener noreferrer">TMS-VPN</a></div><div style="font-size: 10px; opacity: 0.5; margin-top: 5px;">Port: 2083</div>`;
     app.appendChild(footer);
     app.appendChild(renderQRModal());
     app.appendChild(renderToast());
