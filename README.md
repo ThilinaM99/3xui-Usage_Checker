@@ -1,11 +1,6 @@
 <div align="center">
 <h1>ᛝ TMS-VPN STORE ᛝ</h1> 
 <p><b>A Custom Subscription Page for 3X-UI with Usage Checker</b></p>
-<p>
-  <img src="https://raw.githubusercontent.com/ThilinaM99/3xui-Usage_Checker/refs/heads/main/screenshots/screenshot-2.jpg" alt="Mobile UI" width="35%">
-  <img src="https://raw.githubusercontent.com/ThilinaM99/3xui-Usage_Checker/refs/heads/main/screenshots/screenshot-1.jpg" alt="Desktop UI" width="55%">
-</p>
-  <p>
     <a href="https://github.com/ThilinaM99/3xui-Usage_Checker">Project Repo ⏣</a>
   </p>
 </div>
@@ -21,7 +16,7 @@
 ## ✨ Features 
 
 - **🎨 UI/UX**:
-Dark/light theme, glassmorphism,smooth transitions, toast notifications, Animated Background(NEW), Adaptive themes(NEW)
+Dark/light theme, glassmorphism, smooth transitions, toast notifications, Animated Background(NEW), Adaptive themes(NEW)
 - **📊 Dashboard**: Subscription info, config links, QR codes, status indicators
 - **📡 Server Stats (NEW)**: Real-time CPU/RAM/Network monitoring
 - **🔧 Installation**: One-line install, systemd integration
@@ -48,17 +43,6 @@ bash <(curl -Ls https://raw.githubusercontent.com/ThilinaM99/3xui-Usage_Checker/
 > 
 
 ## 🛡️ Technical Note & Security
-- **Recommendation**: For extreme high-security environments, consider manual source-code integration.
-  
-## 👨‍💻 Author
-Made with ❤️ by 𝙇𝙊𝙍𝘿𝙂𝙍𝙄𝙈 𖹭.ᐟ
-
-## 📄 License
-This project is licensed under the **Attribution-NonCommercial-ShareAlike 4.0 International (CC BY-NC-SA 4.0)**.
-
-[![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc-sa/4.0/)
-
-- **Attribution**: You must give appropriate credit.
-- **NonCommercial**: You may **not** use the material for commercial purposes.
-- **ShareAlike**: If you remix, transform, or build upon the material, you must distribute your contributions under the same license.
+- **Recommendation**: For extremely high-security environments, consider manual source-code integration.
+  : If you remix, transform, or build upon the material, you must distribute your contributions under the same license.
 
