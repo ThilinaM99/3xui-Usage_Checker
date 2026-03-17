@@ -324,7 +324,30 @@
     const card = mkEl("div", "span-8 usage-overview");
     const s = getStatusInfo();
     const limitHtml = s.total === 0 ? `<span class="glitch-text" data-text="${t("unlimited")}">${t("unlimited")}</span>` : formatBytes(s.total);
-    card.innerHTML = `<div class="usage-header"><span class="usage-title">Data Usage Metrics</span><span class="usage-title">${s.pct.toFixed(1)}%</span></div><div class="usage-big-number" id="usage-val">0 B</div><div class="progress-container"><div class="progress-bar ${s.total === 0 ? "unlimited-bar" : ""}" id="prog-bar" style="transform:translateX(${s.total === 0 ? "0" : "-100%"});"><div class="bloom"></div></div></div><div class="usage-sub">${t("limit")}: ${limitHtml}</div>`;
+    card.innerHTML = `
+      <div class="usage-header">
+        <span class="usage-title">Data Usage Metrics</span>
+        <div class="usage-status-group">
+          <span class="usage-percentage">${s.pct.toFixed(1)}%</span>
+        </div>
+      </div>
+      <div class="usage-main-content">
+        <div class="usage-big-number" id="usage-val">0 B</div>
+        <div class="live-visualizer-container">
+          <canvas id="traffic-waveform"></canvas>
+          <div class="visualizer-overlay"></div>
+        </div>
+      </div>
+      <div class="progress-container">
+        <div class="progress-bar ${s.total === 0 ? "unlimited-bar" : ""}" id="prog-bar" style="transform:translateX(${s.total === 0 ? "0" : "-100%"});">
+          <div class="bloom"></div>
+        </div>
+      </div>
+      <div class="usage-footer">
+        <div class="usage-sub">${t("limit")}: ${limitHtml}</div>
+        <div id="smart-insight" class="insight-pill">Analyzing connection...</div>
+      </div>
+    `;
     return card;
   }
   function renderInfoCard() {
@@ -397,7 +420,7 @@
     const hosting = mkEl("div", "infra-card");
     hosting.innerHTML = `<div class="infra-icon" id="infra-isp-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color:var(--theme-isp)"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg></div><div class="infra-details"><div class="infra-value" id="infra-isp">${STATE.raw.isp}</div><div class="infra-label">Provider</div></div>`;
     const locCard = mkEl("div", "infra-card");
-    locCard.innerHTML = `<div class="infra-icon" id="infra-loc-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color:var(--theme-loc)"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg></div><div class="infra-details"><div class="infra-value" id="infra-loc">${STATE.raw.location}</div><div class="infra-label">Region</div></div>`;
+    locCard.innerHTML = `<div class="infra-icon" id="infra-loc-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color:var(--theme-loc)"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg></div><div class="infra-details"><div class="infra-value" id="infra-loc">${STATE.raw.location}</div><div class="infra-label">Region</div></div><div class="mini-map-container"><canvas id="mini-map"></canvas><div class="map-pulse"></div></div>`;
     const ping = mkEl("div", "infra-card");
     ping.innerHTML = `<div class="infra-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color:var(--theme-ping)"><path d="M5 12.55a11 11 0 0 1 14.08 0"></path><path d="M1.42 9a16 16 0 0 1 21.16 0"></path><path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path><line x1="12" y1="20" x2="12.01" y2="20"></line></svg></div><div class="infra-details"><div class="infra-value" id="ping-value">Check Latency</div><div class="infra-label">Client to Server</div></div><div class="ping-action-wrap"><div class="ping-dot" id="ping-dot"></div><div class="icon-btn-mini" id="btn-ping" title="Check Ping"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg></div></div>`;
     ping.querySelector("#btn-ping").onclick = () => checkPing();
@@ -430,6 +453,102 @@
 
   /* Expiry Countdown Styles Integrated into Premium Theme */
   const countdownStyles = `
+  .usage-overview {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    justify-content: center;
+    min-height: 180px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .usage-main-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 20px;
+    position: relative;
+    z-index: 2;
+  }
+
+  .live-visualizer-container {
+    flex: 1;
+    height: 60px;
+    position: relative;
+    max-width: 250px;
+  }
+
+  #traffic-waveform {
+    width: 100%;
+    height: 100%;
+    filter: drop-shadow(0 0 8px var(--accent-glow));
+  }
+
+  .usage-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-top: 4px;
+  }
+
+  .insight-pill {
+    padding: 6px 14px;
+    background: rgba(var(--node-color, 99, 102, 241), 0.1);
+    border: 1px solid var(--card-border);
+    border-radius: 100px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+  }
+
+  .pulse-insight {
+    animation: insight-pulse 1s ease-out;
+  }
+
+  @keyframes insight-pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); background: rgba(var(--node-color, 99, 102, 241), 0.2); }
+    100% { transform: scale(1); }
+  }
+
+  .mini-map-container {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 80px;
+    height: 60px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 12px;
+    border: 1px solid var(--card-border);
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  #mini-map {
+    width: 100%;
+    height: 100%;
+    opacity: 0.6;
+  }
+
+  .map-pulse {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 4px;
+    height: 4px;
+    background: #fff;
+    border-radius: 50%;
+    box-shadow: 0 0 10px var(--accent);
+  }
+
   .expiry-countdown-container {
     background: var(--bg-card);
     border: 1px solid var(--card-border);
@@ -573,6 +692,110 @@
     document.head.appendChild(styleSheet);
   }
 
+  function updateTrafficWaveform(up, down) {
+    const canvas = getEl("traffic-waveform");
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!window._waveformPoints) window._waveformPoints = [];
+    
+    // Add current speed to points (normalize to some extent)
+    const totalSpeed = (up + down) / 1024; // MB/s ish for scaling
+    window._waveformPoints.push(totalSpeed);
+    if (window._waveformPoints.length > 50) window._waveformPoints.shift();
+
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = canvas.offsetWidth * dpr;
+    canvas.height = canvas.offsetHeight * dpr;
+    ctx.scale(dpr, dpr);
+
+    ctx.clearRect(0, 0, canvas.offsetWidth, canvas.offsetHeight);
+    ctx.beginPath();
+    ctx.strokeStyle = getComputedStyle(document.body).getPropertyValue("--accent").trim() || "#6366f1";
+    ctx.lineWidth = 2;
+    ctx.lineJoin = "round";
+
+    const step = canvas.offsetWidth / 49;
+    window._waveformPoints.forEach((p, i) => {
+      const x = i * step;
+      const h = Math.min(canvas.offsetHeight * 0.8, p * 10 + 2); // basic scaling
+      const y = canvas.offsetHeight - h;
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+    
+    // Restoration: Restore the missing updateMiniMap function call
+    updateMiniMap();
+  }
+
+  function updateMiniMap() {
+    const canvas = getEl("mini-map");
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = canvas.offsetWidth * dpr;
+    canvas.height = canvas.offsetHeight * dpr;
+    ctx.scale(dpr, dpr);
+    
+    ctx.clearRect(0, 0, canvas.offsetWidth, canvas.offsetHeight);
+    ctx.strokeStyle = "rgba(148, 163, 184, 0.2)";
+    ctx.lineWidth = 1;
+    
+    // Draw very simplified world map grid
+    for(let i=0; i<canvas.offsetWidth; i+=10) {
+      ctx.beginPath();
+      ctx.moveTo(i, 0);
+      ctx.lineTo(i, canvas.offsetHeight);
+      ctx.stroke();
+    }
+    for(let i=0; i<canvas.offsetHeight; i+=10) {
+      ctx.beginPath();
+      ctx.moveTo(0, i);
+      ctx.lineTo(canvas.offsetWidth, i);
+      ctx.stroke();
+    }
+
+    // Glowing Pulse at center (representing server)
+    const centerX = canvas.offsetWidth / 2;
+    const centerY = canvas.offsetHeight / 2;
+    const time = Date.now() / 1000;
+    const pulseSize = 5 + Math.sin(time * 4) * 3;
+    
+    const grad = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, pulseSize * 2);
+    const accent = getComputedStyle(document.body).getPropertyValue("--accent").trim() || "#10b981";
+    grad.addColorStop(0, accent);
+    grad.addColorStop(1, "rgba(0,0,0,0)");
+    
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, pulseSize * 2, 0, Math.PI * 2);
+    ctx.fill();
+    
+    ctx.fillStyle = "#fff";
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, 3, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  function updateSmartInsights(up, down, cpu, ram) {
+    const el = getEl("smart-insight");
+    if (!el) return;
+    let tip = "Connection Stable";
+    const totalSpeed = (up + down) / 1024; // MB/s
+
+    if (totalSpeed > 5) tip = "Optimal for 4K Streaming 🎬";
+    else if (totalSpeed > 2) tip = "Great for HD Video 📺";
+    
+    const latency = parseInt(getEl("ping-value")?.textContent) || 0;
+    if (latency > 0 && latency < 100) tip = "Perfect for Gaming 🎮";
+    
+    if (cpu > 80 || ram > 80) tip = "Server Under Heavy Load ⚠️";
+
+    el.textContent = tip;
+    el.classList.add("pulse-insight");
+    setTimeout(() => el.classList.remove("pulse-insight"), 1000);
+  }
+
   function startStatsPolling() {
     if (window.statsPollingActive) return;
     window.statsPollingActive = true;
@@ -589,9 +812,17 @@
           if (ramEl) ramEl.textContent = data.ram || 0;
           const uploadEl = getEl("upload-val"),
             downloadEl = getEl("download-val");
-          if (uploadEl) uploadEl.textContent = formatSpeed(data.net_out || 0);
-          if (downloadEl)
-            downloadEl.textContent = formatSpeed(data.net_in || 0);
+          
+          const upSpeed = data.net_out || 0;
+          const downSpeed = data.net_in || 0;
+          
+          if (uploadEl) uploadEl.textContent = formatSpeed(upSpeed);
+          if (downloadEl) downloadEl.textContent = formatSpeed(downSpeed);
+
+          // Update Waveform and Insights
+          updateTrafficWaveform(upSpeed, downSpeed);
+          updateSmartInsights(upSpeed, downSpeed, data.cpu, data.ram);
+
           if (data.isp) {
             const ispEl = getEl("infra-isp");
             if (ispEl) ispEl.textContent = data.isp;
