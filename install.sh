@@ -14,6 +14,26 @@ echo -e "${RED}⚠️  The user is solely responsible for any consequences or da
 echo -e "${RED}⚠️  USE AT YOUR OWN RISK.${NC}"
 sleep 2
 
+fetch() {
+    local url="$1"
+    local out="$2"
+    if ! curl -fLsS "$url" -o "$out"; then
+        echo -e "${RED}❌ Failed to download: ${url}${NC}"
+        exit 1
+    fi
+}
+
+assert_contains() {
+    local file="$1"
+    local needle="$2"
+    if [[ ! -s "$file" ]] || ! grep -q "$needle" "$file"; then
+        echo -e "${RED}❌ Downloaded file looks invalid: ${file}${NC}"
+        echo -e "${RED}   (This usually means your GitHub raw URL returned 404/HTML and got saved as the asset.)${NC}"
+        echo -e "${RED}   Please verify the repo is PUBLIC and the file exists at the expected path.${NC}"
+        exit 1
+    fi
+}
+
 if [ "$EUID" -ne 0 ]; then
   echo -e "${RED}Please run as root (sudo bash install.sh)${NC}"
   exit
@@ -96,8 +116,10 @@ rm -rf "$TEMP_ZIP" "/tmp/3x-ui-extract"
 echo -e "${BLUE}Fetching assets...${NC}"
 #  Assets (Overwriting official ones where needed)
 # Use TIMESTAMP to bust GitHub CDN cache
-curl -Ls "$REPO_URL/web/assets/js/subscription.js?v=$TIMESTAMP" -o "$ASSETS_PATH/js/subscription.js"
-curl -Ls "$REPO_URL/web/assets/css/premium.css?v=$TIMESTAMP" -o "$ASSETS_PATH/css/premium.css"
+fetch "$REPO_URL/web/assets/js/subscription.js?v=$TIMESTAMP" "$ASSETS_PATH/js/subscription.js"
+fetch "$REPO_URL/web/assets/css/premium.css?v=$TIMESTAMP" "$ASSETS_PATH/css/premium.css"
+assert_contains "$ASSETS_PATH/js/subscription.js" "(function"
+assert_contains "$ASSETS_PATH/css/premium.css" ":root"
 
 # Templates (Crucial for Persistence/Debug Mode)
 echo -e "${BLUE}Fetching assets...${NC}"
@@ -106,7 +128,8 @@ echo -e "${BLUE}Fetching assets...${NC}"
 SUBPAGE_PATH="$HTML_PATH/settings/panel/subscription/subpage.html"
 mkdir -p $(dirname "$SUBPAGE_PATH")
 # Download subpage.html from repo
-curl -Ls "$REPO_URL/web/html/settings/panel/subscription/subpage.html?v=$VERSION" -o "$SUBPAGE_PATH"
+fetch "$REPO_URL/web/html/settings/panel/subscription/subpage.html?v=$VERSION" "$SUBPAGE_PATH"
+assert_contains "$SUBPAGE_PATH" "subscription-data"
 
 # CACHE BUSTING: Inject installation timestamp to force browser update
 # Replace the Go template versioning with our timestamp to bust client caches
