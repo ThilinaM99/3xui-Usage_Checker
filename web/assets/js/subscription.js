@@ -188,6 +188,8 @@
     app.appendChild(renderBottomNav());
     app.appendChild(renderOfflineBanner());
     app.appendChild(renderPullToRefresh());
+    app.appendChild(renderSessionTimer());
+    app.appendChild(renderQuickActions());
     document.body.appendChild(app);
     requestAnimationFrame(() => {
       setTimeout(() => {
@@ -289,6 +291,7 @@
   }
   function renderInfoCard() {
     const card = mkEl("div", "span-4 stat-mini-grid");
+    const s = getStatusInfo();
     let remText = "∞";
     if (STATE.raw.total > 0) {
       const left = STATE.raw.total - (STATE.raw.up + STATE.raw.down);
@@ -322,12 +325,69 @@
       else lastOnlineText = days + "d ago";
     }
     lastOnline.innerHTML = `<div class="stat-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--status-online)"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg></div><div class="stat-value">${lastOnlineText}</div><div class="stat-label">Last Online</div>`;
+    
+    // Data Usage Prediction
+    const prediction = mkEl("div", "stat-mini prediction-card");
+    let predText = "N/A";
+    if (STATE.raw.total > 0) {
+      const used = STATE.raw.up + STATE.raw.down;
+      const daysSinceStart = Math.max(1, Math.floor((Date.now() - STATE.raw.lastOnline) / (1000 * 60 * 60 * 24)) || 1);
+      const dailyAvg = used / daysSinceStart;
+      const remaining = STATE.raw.total - used;
+      const daysLeft = Math.floor(remaining / dailyAvg);
+      predText = daysLeft > 0 ? `~${daysLeft}d left` : "Soon";
+    }
+    prediction.innerHTML = `<div class="stat-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--accent)"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg></div><div class="stat-value" id="prediction-val">${predText}</div><div class="stat-label">Est. Duration</div>`;
+    
     card.appendChild(up);
     card.appendChild(down);
     card.appendChild(rem);
     card.appendChild(exp);
     card.appendChild(lastOnline);
+    card.appendChild(prediction);
+    
+    // Add notification badges
+    renderNotificationBadges(card, s);
+    
     return card;
+  }
+  
+  function renderNotificationBadges(container, statusInfo) {
+    const badges = [];
+    
+    // Low data warning
+    if (statusInfo.total > 0 && statusInfo.pct > 80) {
+      badges.push({
+        type: 'warning',
+        icon: '⚠️',
+        text: statusInfo.pct > 95 ? 'Critical: Data almost out!' : 'Warning: Data running low',
+        color: statusInfo.pct > 95 ? '#ef4444' : '#f59e0b'
+      });
+    }
+    
+    // Expiry warning
+    if (STATE.raw.expire > 0) {
+      const daysLeft = Math.ceil((STATE.raw.expire - Date.now()) / (1000 * 60 * 60 * 24));
+      if (daysLeft <= 7 && daysLeft > 0) {
+        badges.push({
+          type: 'warning',
+          icon: '⏰',
+          text: daysLeft === 1 ? 'Expires tomorrow!' : `Expires in ${daysLeft} days`,
+          color: daysLeft <= 3 ? '#ef4444' : '#f59e0b'
+        });
+      }
+    }
+    
+    if (badges.length > 0) {
+      const badgeContainer = mkEl("div", "notification-badges");
+      badges.forEach(badge => {
+        const badgeEl = mkEl("div", `notification-badge ${badge.type}`);
+        badgeEl.style.setProperty('--badge-color', badge.color);
+        badgeEl.innerHTML = `<span class="badge-icon">${badge.icon}</span><span class="badge-text">${badge.text}</span>`;
+        badgeContainer.appendChild(badgeEl);
+      });
+      container.appendChild(badgeContainer);
+    }
   }
   function renderCountdownTimer() {
     const wrap = mkEl("div", "span-12 countdown-wrapper");
@@ -954,6 +1014,117 @@
       }
     }
     return null;
+  }
+  
+  // ===== SESSION TIMER =====
+  function renderSessionTimer() {
+    const timer = mkEl("div", "session-timer");
+    timer.id = "session-timer";
+    timer.innerHTML = `
+      <div class="session-timer-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+          <polyline points="12 6 12 12 16 14"></polyline>
+        </svg>
+      </div>
+      <div class="session-timer-info">
+        <span class="session-label">Session</span>
+        <span class="session-duration" id="session-duration">00:00:00</span>
+      </div>
+    `;
+    
+    // Start session timer
+    if (!window.sessionStartTime) {
+      window.sessionStartTime = Date.now();
+    }
+    
+    setInterval(() => {
+      const elapsed = Date.now() - window.sessionStartTime;
+      const hours = Math.floor(elapsed / (1000 * 60 * 60));
+      const minutes = Math.floor((elapsed % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((elapsed % (1000 * 60)) / 1000);
+      const durationEl = getEl("session-duration");
+      if (durationEl) {
+        durationEl.textContent = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+      }
+    }, 1000);
+    
+    return timer;
+  }
+  
+  // ===== QUICK ACTIONS =====
+  function renderQuickActions() {
+    const actions = mkEl("div", "quick-actions");
+    
+    // Copy Subscription Link
+    const copyBtn = mkEl("div", "quick-action-btn haptic");
+    copyBtn.setAttribute("data-tooltip", "Copy Link");
+    copyBtn.innerHTML = `
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+      </svg>
+    `;
+    copyBtn.onclick = () => {
+      hapticVibrate();
+      if (STATE.subUrl) {
+        copy(STATE.subUrl);
+      } else {
+        showToast("No link available");
+      }
+    };
+    actions.appendChild(copyBtn);
+    
+    // Show QR Code
+    const qrBtn = mkEl("div", "quick-action-btn haptic");
+    qrBtn.setAttribute("data-tooltip", "QR Code");
+    qrBtn.innerHTML = `
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="3" width="7" height="7"></rect>
+        <rect x="14" y="3" width="7" height="7"></rect>
+        <rect x="14" y="14" width="7" height="7"></rect>
+        <rect x="3" y="14" width="7" height="7"></rect>
+      </svg>
+    `;
+    qrBtn.onclick = () => {
+      hapticVibrate();
+      if (STATE.subUrl) {
+        showQR(STATE.subUrl, "Subscription");
+      }
+    };
+    actions.appendChild(qrBtn);
+    
+    // Refresh Data
+    const refreshBtn = mkEl("div", "quick-action-btn haptic");
+    refreshBtn.setAttribute("data-tooltip", "Refresh");
+    refreshBtn.innerHTML = `
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="23 4 23 10 17 10"></polyline>
+        <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+      </svg>
+    `;
+    refreshBtn.onclick = () => {
+      hapticVibrate();
+      refreshData();
+    };
+    actions.appendChild(refreshBtn);
+    
+    // Scroll to Top
+    const topBtn = mkEl("div", "quick-action-btn haptic");
+    topBtn.setAttribute("data-tooltip", "Top");
+    topBtn.innerHTML = `
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="12" y1="19" x2="12" y2="5"></line>
+        <polyline points="5 12 12 5 19 12"></polyline>
+      </svg>
+    `;
+    topBtn.onclick = () => {
+      hapticVibrate();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+    actions.appendChild(topBtn);
+    
+    return actions;
   }
   function formatBytes(bytes) {
     if (bytes === 0) return "0 B";
