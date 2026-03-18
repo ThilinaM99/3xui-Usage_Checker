@@ -213,9 +213,54 @@
     let dispName = STATE.raw.sid;
     const linksEl = getEl("subscription-links");
     const links = linksEl ? linksEl.value.split("\n").filter(Boolean) : [];
-    if (!STATE.raw.sid.includes("@") && links.length > 0) {
-      if (links[0].includes("#")) {
-        dispName = links[0].split("#")[1];
+    
+    // Try to extract email from subscription URL if sid doesn't contain @
+    if (!dispName.includes("@")) {
+      // Method 1: Extract from subscription link fragment (#email)
+      if (links.length > 0 && links[0].includes("#")) {
+        const fragment = links[0].split("#")[1];
+        if (fragment && fragment.includes("@")) {
+          dispName = fragment;
+        }
+      }
+      
+      // Method 2: Extract from subUrl fragment
+      if (!dispName.includes("@") && STATE.raw.subUrl && STATE.raw.subUrl.includes("#")) {
+        const fragment = STATE.raw.subUrl.split("#")[1];
+        if (fragment && fragment.includes("@")) {
+          dispName = fragment;
+        }
+      }
+      
+      // Method 3: Decode and extract email from URL path (common in 3x-ui)
+      if (!dispName.includes("@") && STATE.raw.subUrl) {
+        try {
+          const url = new URL(STATE.raw.subUrl);
+          // Check path segments for encoded email
+          const pathParts = url.pathname.split("/");
+          for (const part of pathParts) {
+            try {
+              const decoded = decodeURIComponent(part);
+              if (decoded.includes("@")) {
+                dispName = decoded;
+                break;
+              }
+            } catch (e) {}
+          }
+          
+          // Check query parameters
+          if (!dispName.includes("@")) {
+            for (const [key, value] of url.searchParams) {
+              try {
+                const decoded = decodeURIComponent(value);
+                if (decoded.includes("@")) {
+                  dispName = decoded;
+                  break;
+                }
+              } catch (e) {}
+            }
+          }
+        } catch (e) {}
       }
     }
     dispName = cleanupName(dispName);
