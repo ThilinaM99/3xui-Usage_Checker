@@ -243,7 +243,28 @@
     const card = mkEl("div", "span-8 usage-overview");
     const s = getStatusInfo();
     const limitHtml = s.total === 0 ? `<span class="glitch-text" data-text="${t("unlimited")}">${t("unlimited")}</span>` : formatBytes(s.total);
-    card.innerHTML = `<div class="usage-header"><span class="usage-title">Data Usage Metrics</span><span class="usage-title">${s.pct.toFixed(1)}%</span></div><div class="usage-big-number" id="usage-val">0 B</div><div class="progress-container"><div class="progress-bar ${s.total === 0 ? "unlimited-bar" : ""}" id="prog-bar" style="transform:translateX(${s.total === 0 ? "0" : "-100%"});"><div class="bloom"></div></div></div><div class="usage-sub">${t("limit")}: ${limitHtml}</div>`;
+    card.innerHTML = `
+      <div class="usage-header">
+        <span class="usage-title">Data Usage Metrics</span>
+        <div class="usage-status-group">
+          <span class="usage-percentage">${s.pct.toFixed(1)}%</span>
+        </div>
+      </div>
+      <div class="usage-main-content">
+        <div class="usage-big-number" id="usage-val">0 B</div>
+        <div class="live-visualizer-container">
+          <canvas id="traffic-waveform"></canvas>
+          <div class="visualizer-overlay"></div>
+        </div>
+      </div>
+      <div class="progress-container">
+        <div class="progress-bar ${s.total === 0 ? "unlimited-bar" : ""}" id="prog-bar" style="transform:translateX(${s.total === 0 ? "0" : "-100%"});"><div class="bloom"></div></div>
+      </div>
+      <div class="usage-footer">
+        <div class="usage-sub">${t("limit")}: ${limitHtml}</div>
+        <div id="smart-insight" class="insight-pill">Analyzing connection...</div>
+      </div>
+    `;
     return card;
   }
   function renderInfoCard() {
@@ -486,9 +507,17 @@
           if (ramEl) ramEl.textContent = data.ram || 0;
           const uploadEl = getEl("upload-val"),
             downloadEl = getEl("download-val");
-          if (uploadEl) uploadEl.textContent = formatSpeed(data.net_out || 0);
-          if (downloadEl)
-            downloadEl.textContent = formatSpeed(data.net_in || 0);
+          
+          const upSpeed = data.net_out || 0;
+          const downSpeed = data.net_in || 0;
+          
+          if (uploadEl) uploadEl.textContent = formatSpeed(upSpeed);
+          if (downloadEl) downloadEl.textContent = formatSpeed(downSpeed);
+          
+          // Update Waveform and Insights
+          updateTrafficWaveform(upSpeed, downSpeed);
+          updateSmartInsights(upSpeed, downSpeed, data.cpu, data.ram);
+          
           if (data.isp) {
             const ispEl = getEl("infra-isp");
             if (ispEl) ispEl.textContent = data.isp;
@@ -505,6 +534,58 @@
       setTimeout(poll, 2000);
     };
     poll();
+  }
+  
+  function updateTrafficWaveform(up, down) {
+    const canvas = getEl("traffic-waveform");
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!window._waveformPoints) window._waveformPoints = [];
+    
+    // Add current speed to points
+    const totalSpeed = (up + down) / 1024;
+    window._waveformPoints.push(totalSpeed);
+    if (window._waveformPoints.length > 50) window._waveformPoints.shift();
+
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = canvas.offsetWidth * dpr;
+    canvas.height = canvas.offsetHeight * dpr;
+    ctx.scale(dpr, dpr);
+
+    ctx.clearRect(0, 0, canvas.offsetWidth, canvas.offsetHeight);
+    ctx.beginPath();
+    ctx.strokeStyle = getComputedStyle(document.body).getPropertyValue("--accent").trim() || "#6366f1";
+    ctx.lineWidth = 2;
+    ctx.lineJoin = "round";
+
+    const step = canvas.offsetWidth / 49;
+    window._waveformPoints.forEach((p, i) => {
+      const x = i * step;
+      const h = Math.min(canvas.offsetHeight * 0.8, p * 10 + 2);
+      const y = canvas.offsetHeight - h;
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+  }
+  
+  function updateSmartInsights(up, down, cpu, ram) {
+    const el = getEl("smart-insight");
+    if (!el) return;
+    let tip = "Connection Stable ✓";
+    const totalSpeed = (up + down) / 1024; // MB/s
+
+    if (totalSpeed > 5) tip = "Optimal for 4K Streaming 🎬";
+    else if (totalSpeed > 2) tip = "Great for HD Video 📺";
+    
+    const latency = parseInt(getEl("ping-value")?.textContent) || 0;
+    if (latency > 0 && latency < 100) tip = "Perfect for Gaming 🎮";
+    
+    if (cpu > 80 || ram > 80) tip = "Server Under Heavy Load ⚠️";
+
+    el.textContent = tip;
+    el.classList.add("pulse-insight");
+    setTimeout(() => el.classList.remove("pulse-insight"), 1000);
   }
   function checkPing() {
     const valEl = getEl("ping-value"),
