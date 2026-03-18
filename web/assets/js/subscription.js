@@ -157,6 +157,8 @@
     renderApp();
     applyTheme();
     startStatsPolling();
+    setupOfflineDetection();
+    cacheData();
     if (!window.statusLoop) {
       window.statusLoop = setInterval(updateStatus, 60000);
     }
@@ -183,6 +185,9 @@
     app.appendChild(footer);
     app.appendChild(renderQRModal());
     app.appendChild(renderToast());
+    app.appendChild(renderBottomNav());
+    app.appendChild(renderOfflineBanner());
+    app.appendChild(renderPullToRefresh());
     document.body.appendChild(app);
     requestAnimationFrame(() => {
       setTimeout(() => {
@@ -216,7 +221,7 @@
     dispName = cleanupName(dispName);
     const s = getStatusInfo();
     const profile = mkEl("div", "user-profile");
-    profile.innerHTML = `<div class="avatar">${dispName.substring(0, 1).toUpperCase()}</div><div class="user-text-group"><div class="dashboard-title">User Dashboard</div><div class="user-main-row"><div class="username-display" data-text="${dispName}">${dispName}</div><div class="status-indicator-wrap"><span class="status-text-inline" style="color: ${s.color}">${s.label}</span><div class="status-dot-inline" style="background:${s.color}; box-shadow: 0 0 10px ${s.color}; border-color: ${s.color}44;"></div></div></div></div>`;
+    profile.innerHTML = `<div class="avatar-premium"><img src="https://i.ibb.co/v4WPzWBb/image.png" alt="T" class="logo-img"></div><div class="user-text-group"><div class="dashboard-title">User Dashboard</div><div class="user-main-row"><div class="username-display" data-text="${dispName}">${dispName}</div><div class="status-indicator-wrap"><span class="status-text-inline" style="color: ${s.color}">${s.label}</span><div class="status-dot-inline" style="background:${s.color}; box-shadow: 0 0 10px ${s.color}; border-color: ${s.color}44;"></div></div></div></div>`;
     const ctrls = mkEl("div", "controls");
     ctrls.style.position = "relative";
     ctrls.style.zIndex = "200";
@@ -695,6 +700,194 @@
     toastEl.style.top = "max(24px, env(safe-area-inset-top) + 24px)";
     toastEl.innerText = t("copied");
     return toastEl;
+  }
+  
+  // ===== MOBILE OPTIMIZATIONS =====
+  
+  function renderBottomNav() {
+    const nav = mkEl("div", "bottom-nav");
+    nav.innerHTML = `
+      <div class="nav-item active haptic" data-section="home">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+          <polyline points="9 22 9 12 15 12 15 22"></polyline>
+        </svg>
+        <span class="nav-label">Home</span>
+      </div>
+      <div class="nav-item haptic" data-section="stats">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="20" x2="18" y2="10"></line>
+          <line x1="12" y1="20" x2="12" y2="4"></line>
+          <line x1="6" y1="20" x2="6" y2="14"></line>
+        </svg>
+        <span class="nav-label">Stats</span>
+      </div>
+      <div class="nav-item haptic" data-section="refresh" id="nav-refresh">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="23 4 23 10 17 10"></polyline>
+          <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+        </svg>
+        <span class="nav-label">Refresh</span>
+      </div>
+      <div class="nav-item haptic" data-section="settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+        </svg>
+        <span class="nav-label">More</span>
+      </div>
+    `;
+    
+    // Add click handlers
+    nav.querySelectorAll('.nav-item').forEach(item => {
+      item.onclick = () => {
+        hapticVibrate();
+        nav.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+        item.classList.add('active');
+        
+        const section = item.dataset.section;
+        if (section === 'refresh') {
+          refreshData();
+        } else if (section === 'home') {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        } else if (section === 'stats') {
+          const statsGrid = getEl('stats-grid');
+          if (statsGrid) statsGrid.scrollIntoView({ behavior: 'smooth' });
+        }
+      };
+    });
+    
+    return nav;
+  }
+  
+  function renderOfflineBanner() {
+    const banner = mkEl("div", "offline-banner");
+    banner.id = "offline-banner";
+    banner.innerHTML = `
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="1" y1="1" x2="23" y2="23"></line>
+        <path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"></path>
+        <path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"></path>
+        <path d="M10.71 5.05A16 16 0 0 1 22.58 9"></path>
+        <path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"></path>
+        <path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path>
+        <line x1="12" y1="20" x2="12.01" y2="20"></line>
+      </svg>
+      <span>You're offline - Showing cached data</span>
+    `;
+    return banner;
+  }
+  
+  function renderPullToRefresh() {
+    const ptr = mkEl("div", "ptr-indicator");
+    ptr.id = "ptr-indicator";
+    ptr.innerHTML = `
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="23 4 23 10 17 10"></polyline>
+        <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+      </svg>
+    `;
+    
+    // Pull to refresh logic
+    let startY = 0;
+    let pulling = false;
+    
+    document.addEventListener('touchstart', (e) => {
+      if (window.scrollY === 0) {
+        startY = e.touches[0].pageY;
+        pulling = true;
+      }
+    }, { passive: true });
+    
+    document.addEventListener('touchmove', (e) => {
+      if (!pulling) return;
+      const y = e.touches[0].pageY;
+      const diff = y - startY;
+      
+      if (diff > 60 && window.scrollY === 0) {
+        ptr.classList.add('visible');
+      }
+    }, { passive: true });
+    
+    document.addEventListener('touchend', () => {
+      if (ptr.classList.contains('visible')) {
+        ptr.classList.add('refreshing');
+        hapticVibrate();
+        refreshData().then(() => {
+          setTimeout(() => {
+            ptr.classList.remove('visible', 'refreshing');
+          }, 500);
+        });
+      }
+      pulling = false;
+    }, { passive: true });
+    
+    return ptr;
+  }
+  
+  function hapticVibrate(duration = 10) {
+    if (navigator.vibrate) {
+      navigator.vibrate(duration);
+    }
+  }
+  
+  function refreshData() {
+    return new Promise((resolve) => {
+      // Clear and re-render
+      const old = getEl("app-root");
+      if (old) {
+        old.style.opacity = "0.5";
+        old.style.filter = "blur(2px)";
+      }
+      
+      setTimeout(() => {
+        init();
+        showToast("Data refreshed");
+        resolve();
+      }, 300);
+    });
+  }
+  
+  // Offline detection
+  function setupOfflineDetection() {
+    const banner = getEl("offline-banner");
+    
+    window.addEventListener('online', () => {
+      if (banner) banner.classList.remove('show');
+      showToast("Back online");
+    });
+    
+    window.addEventListener('offline', () => {
+      if (banner) banner.classList.add('show');
+      hapticVibrate(50);
+    });
+    
+    // Initial check
+    if (!navigator.onLine && banner) {
+      banner.classList.add('show');
+    }
+  }
+  
+  // Cache data for offline
+  function cacheData() {
+    if (STATE.raw) {
+      localStorage.setItem('tmsvpn_cached', JSON.stringify({
+        raw: STATE.raw,
+        timestamp: Date.now()
+      }));
+    }
+  }
+  
+  function loadCachedData() {
+    const cached = localStorage.getItem('tmsvpn_cached');
+    if (cached) {
+      const data = JSON.parse(cached);
+      // Cache valid for 1 hour
+      if (Date.now() - data.timestamp < 3600000) {
+        return data.raw;
+      }
+    }
+    return null;
   }
   function formatBytes(bytes) {
     if (bytes === 0) return "0 B";
