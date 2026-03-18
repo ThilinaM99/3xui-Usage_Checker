@@ -1,80 +1,20 @@
 VERSION="2.0"
 TIMESTAMP=$(date +%s)
 
-# Colors
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
-CYAN='\033[0;36m'
-YELLOW='\033[1;33m'
-MAGENTA='\033[0;35m'
-BOLD='\033[1m'
 NC='\033[0m'
 
-# Clear screen and show banner
-clear
-
-echo -e "${CYAN}"
-echo "╔══════════════════════════════════════════════════════════════╗"
-echo "║                                                              ║"
-echo "║  ${MAGENTA}████████╗██████╗ ${CYAN}██╗   ██╗██╗    ██╗███╗   ██╗███████╗${CYAN}    ║"
-echo "║  ${MAGENTA}╚══██╔══╝██╔══██╗${CYAN}██║   ██║██║    ██║████╗  ██║██╔════╝${CYAN}    ║"
-echo "║     ${MAGENTA}██║   ███████║${CYAN}██║   ██║██║ █╗ ██║██╔██╗ ██║█████╗  ${CYAN}    ║"
-echo "║     ${MAGENTA}██║   ██╔══██║${CYAN}██║   ██║██║███╗██║██║╚██╗██║██╔══╝  ${CYAN}    ║"
-echo "║     ${MAGENTA}██║   ██║  ██║${CYAN}╚██████╔╝╚███╔███╔╝██║ ╚████║███████╗${CYAN}    ║"
-echo "║     ${MAGENTA}╚═╝   ╚═╝  ╚═╝${CYAN} ╚═════╝  ╚══╝╚══╝ ╚═╝  ╚═══╝╚══════╝${CYAN}    ║"
-echo "║                                                              ║"
-echo "║  ${GREEN}██╗   ██╗██╗    ██╗███╗   ██╗███████╗    ${YELLOW}██╗   ██╗██╗ ██████╗████████╗${CYAN} ║"
-echo "║  ${GREEN}██║   ██║██║    ██║████╗  ██║██╔════╝    ${YELLOW}██║   ██║██║██╔════╝╚══██╔══╝${CYAN} ║"
-echo "║  ${GREEN}██║   ██║██║ █╗ ██║██╔██╗ ██║█████╗      ${YELLOW}██║   ██║██║██║        ██║   ${CYAN}   ║"
-echo "║  ${GREEN}██║   ██║██║███╗██║██║╚██╗██║██╔══╝      ${YELLOW}╚██╗ ██╔╝██║██║        ██║   ${CYAN}   ║"
-echo "║  ${GREEN}╚██████╔╝╚███╔███╔╝██║ ╚████║███████╗     ${YELLOW}╚████╔╝ ██║╚██████╗   ██║   ${CYAN}   ║"
-echo "║  ${GREEN} ╚═════╝  ╚══╝╚══╝ ╚═╝  ╚═══╝╚══════╝      ${YELLOW}╚═══╝  ╚═╝ ╚═════╝   ╚═╝   ${CYAN}   ║"
-echo "║                                                              ║"
-echo "╚══════════════════════════════════════════════════════════════╝${NC}"
-echo ""
-echo -e "${BOLD}${CYAN}         Premium Subscription Dashboard Theme v${VERSION}${NC}"
-echo -e "${YELLOW}         ─────────────────────────────────────────${NC}"
-echo ""
-echo -e "${BLUE}  [✓] Modern UI Design      [✓] Real-time Stats Monitor${NC}"
-echo -e "${BLUE}  [✓] Mobile Optimized      [✓] Smart Insights${NC}"
-echo -e "${BLUE}  [✓] Countdown Timer       [✓] Offline Mode Support${NC}"
-echo ""
-echo -e "${YELLOW}────────────────────────────────────────────────────────────────${NC}"
-echo ""
-echo -e "${RED}  ⚠️  NOTICE: This project is for EDUCATIONAL PURPOSES ONLY.${NC}"
-echo -e "${RED}  ⚠️  The user is solely responsible for any consequences.${NC}"
-echo -e "${RED}  ⚠️  USE AT YOUR OWN RISK.${NC}"
-echo ""
-echo -e "${YELLOW}────────────────────────────────────────────────────────────────${NC}"
+echo -e "${BLUE}💎 Starting 3x-ui Subscription Theme Installation...${NC}"
+echo -e "${RED}⚠️  NOTICE: This project is for EDUCATIONAL PURPOSES ONLY.${NC}"
+echo -e "${RED}⚠️  The user is solely responsible for any consequences or damages.${NC}"
+echo -e "${RED}⚠️  USE AT YOUR OWN RISK.${NC}"
 sleep 2
 
-# Progress animation
-show_progress() {
-    local pid=$1
-    local delay=0.1
-    local spinstr='⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏'
-    local msg="$2"
-    while [ "$(ps a | awk '{print $1}' | grep $pid)" ]; do
-        for i in $(seq 0 9); do
-            echo -ne "\r${CYAN}[${spinstr:$i:1}] ${msg}...${NC}"
-            sleep $delay
-        done
-    done
-    echo -ne "\r${GREEN}[✓] ${msg}... Done!${NC}\n"
-}
-
-# Step indicator
-STEP=1
-step() {
-    echo -e "\n${BOLD}${CYAN}[Step ${STEP}]${NC} ${YELLOW}$1${NC}"
-    echo -e "${CYAN}────────────────────────────────────${NC}"
-    ((STEP++))
-}
-
 if [ "$EUID" -ne 0 ]; then
-  echo -e "\n${RED}[✗] Error: Please run as root (sudo bash install.sh)${NC}"
-  exit 1
+  echo -e "${RED}Please run as root (sudo bash install.sh)${NC}"
+  exit
 fi
 
 XUI_ROOT="/usr/local/x-ui"
@@ -82,108 +22,116 @@ BASE_PATH="$XUI_ROOT/web"
 ASSETS_PATH="$BASE_PATH/assets"
 HTML_PATH="$BASE_PATH/html"
 
-step "Detecting Environment & Branch"
-
 if [ -z "$BRANCH" ]; then
+    # Try to detect from the URL used to download this script
+    # Default to 'main' for stability
     BRANCH="main"
+    
+    # Check if script was sourced from development branch
     if curl -s --head "https://raw.githubusercontent.com/ThilinaM99/3xui-Usage_Checker/development/install.sh" | grep -q "200 OK"; then
+        # If user explicitly downloaded from development, detect it
         if [ -f "/tmp/xui_installer_dev" ]; then
             BRANCH="development"
         fi
     fi
 fi
 
-echo -e "  ${GREEN}→${NC} Branch: ${GREEN}${BRANCH}${NC}"
+echo -e "${BLUE}Using branch: ${GREEN}${BRANCH}${NC}"
 REPO_URL="https://raw.githubusercontent.com/ThilinaM99/3xui-Usage_Checker/${BRANCH}"
 
-step "Creating Directory Structure"
 mkdir -p "$ASSETS_PATH/js"
 mkdir -p "$ASSETS_PATH/css"
 mkdir -p "$HTML_PATH"
-echo -e "  ${GREEN}→${NC} Directories created: ${CYAN}$BASE_PATH${NC}"
 
-step "Backing Up Existing Files"
-[[ -f "$ASSETS_PATH/js/subscription.js" ]] && cp "$ASSETS_PATH/js/subscription.js" "$ASSETS_PATH/js/subscription.js.bak" 2>/dev/null && echo -e "  ${GREEN}→${NC} Backed up: subscription.js"
-[[ -f "$ASSETS_PATH/css/premium.css" ]] && cp "$ASSETS_PATH/css/premium.css" "$ASSETS_PATH/css/premium.css.bak" 2>/dev/null && echo -e "  ${GREEN}→${NC} Backed up: premium.css"
+echo -e "${BLUE}Backing up existing files...${NC}"
+[[ -f "$ASSETS_PATH/js/subscription.js" ]] && cp "$ASSETS_PATH/js/subscription.js" "$ASSETS_PATH/js/subscription.js.bak" 2>/dev/null
+[[ -f "$ASSETS_PATH/css/premium.css" ]] && cp "$ASSETS_PATH/css/premium.css" "$ASSETS_PATH/css/premium.css.bak" 2>/dev/null
 
-step "Syncing Official Web Assets"
-
+# Templates & Full Asset Sync (Crucial for Persistence/Debug Mode)
+echo -e "${BLUE}Syncing official web assets for full compatibility...${NC}"
 if ! command -v unzip &> /dev/null; then
-    echo -e "  ${CYAN}→${NC} Installing unzip..."
+    echo -e "${BLUE}🔧 Installing unzip...${NC}"
     apt-get install unzip -y >/dev/null 2>&1 || yum install unzip -y >/dev/null 2>&1
 fi
 
-# Detect x-ui version
+# Attempt to detect local x-ui version to fetch compatible assets
+# Make grep extremely forgiving, grab just the decimal version, then prefix 'v' manually
+# Crucially: use 2>&1 because Go binaries often print version info to stderr!
 RAW_VER=$( (/usr/local/x-ui/x-ui -v 2>&1 || /usr/local/x-ui/x-ui --version 2>&1 || /usr/local/x-ui/x-ui version 2>&1) | grep -iEo '[0-9]+\.[0-9]+\.[0-9]+' | head -n 1)
 
 LOCAL_VER=""
 if [[ -n "$RAW_VER" ]]; then
     LOCAL_VER="v${RAW_VER}"
 fi
-
 ARCHIVE_URL="https://github.com/MHSanaei/3x-ui/archive/refs/heads/main.zip"
 EXTRACT_FOLDER="3x-ui-main"
 
 if [[ -n "$LOCAL_VER" ]]; then
-    echo -e "  ${GREEN}→${NC} Detected 3x-ui version: ${GREEN}${LOCAL_VER}${NC}"
+    echo -e "${BLUE}Detected local 3x-ui version: ${GREEN}${LOCAL_VER}${NC}"
+    # Verify if this specific version tag exists on the GitHub repo
     TAG_URL="https://github.com/MHSanaei/3x-ui/archive/refs/tags/${LOCAL_VER}.zip"
     if curl -s --head "$TAG_URL" | head -n 1 | grep -E "200|301|302" >/dev/null; then
         ARCHIVE_URL="$TAG_URL"
-        RAW_VER="${LOCAL_VER#v}"
+        RAW_VER="${LOCAL_VER#v}" # Remove 'v' prefix for extraction folder name
         EXTRACT_FOLDER="3x-ui-${RAW_VER}"
-        echo -e "  ${GREEN}→${NC} Using version-matched assets"
+        echo -e "${GREEN}Downloading version-matched assets to ensure compatibility.${NC}"
     else
-        echo -e "  ${YELLOW}→${NC} Version tag not found, using latest main"
+        echo -e "${RED}Version tag not found on GitHub. Falling back to latest main branch.${NC}"
     fi
 else
-    echo -e "  ${YELLOW}→${NC} Could not detect version, using latest main"
+    echo -e "${RED}Could not detect 3x-ui version. Falling back to latest main branch.${NC}"
 fi
 
 TEMP_ZIP="/tmp/3x-ui-assets.zip"
-echo -e "  ${CYAN}→${NC} Downloading assets..."
 curl -Ls "$ARCHIVE_URL" -o "$TEMP_ZIP"
 mkdir -p "/tmp/3x-ui-extract"
 unzip -qo "$TEMP_ZIP" -d "/tmp/3x-ui-extract"
 
+# Copy official web folder to local x-ui root
 cp -rf "/tmp/3x-ui-extract/${EXTRACT_FOLDER}/web/"* "$BASE_PATH/"
 rm -rf "$TEMP_ZIP" "/tmp/3x-ui-extract"
-echo -e "  ${GREEN}→${NC} Assets synced successfully"
 
-step "Downloading TMS-VPN Theme Files"
-
-echo -e "  ${CYAN}→${NC} Fetching subscription.js..."
+echo -e "${BLUE}Fetching assets...${NC}"
+#  Assets (Overwriting official ones where needed)
+# Use TIMESTAMP to bust GitHub CDN cache
 curl -Ls "$REPO_URL/web/assets/js/subscription.js?v=$TIMESTAMP" -o "$ASSETS_PATH/js/subscription.js"
-echo -e "  ${CYAN}→${NC} Fetching premium.css..."
 curl -Ls "$REPO_URL/web/assets/css/premium.css?v=$TIMESTAMP" -o "$ASSETS_PATH/css/premium.css"
 
+# Templates (Crucial for Persistence/Debug Mode)
+echo -e "${BLUE}Fetching assets...${NC}"
+
+# Templates (Crucial for Persistence/Debug Mode)
 SUBPAGE_PATH="$HTML_PATH/settings/panel/subscription/subpage.html"
 mkdir -p $(dirname "$SUBPAGE_PATH")
-echo -e "  ${CYAN}→${NC} Fetching subpage template..."
+# Download subpage.html from repo
 curl -Ls "$REPO_URL/web/html/settings/panel/subscription/subpage.html?v=$VERSION" -o "$SUBPAGE_PATH"
 
-step "Applying Cache Busting"
-
+# CACHE BUSTING: Inject installation timestamp to force browser update
+# Replace the Go template versioning with our timestamp to bust client caches
 sed -i "s|assets/css/premium.css?{{ .cur_ver }}|assets/css/premium.css?v=$TIMESTAMP|g" "$SUBPAGE_PATH"
 sed -i "s|assets/js/subscription.js?{{ .cur_ver }}|assets/js/subscription.js?v=$TIMESTAMP|g" "$SUBPAGE_PATH"
+
+# Internal JS Cache Busting (Inject into the file itself)
 sed -i "s|__VERSION__|$TIMESTAMP|g" "$ASSETS_PATH/js/subscription.js"
+
+# Clear stale ISP cache to force fresh detection on install/update
 [[ -f "/usr/local/x-ui/isp_info.json" ]] && rm -f "/usr/local/x-ui/isp_info.json"
-echo -e "  ${GREEN}→${NC} Cache busting applied"
 
 chmod -R 755 "$BASE_PATH"
 
-step "Injecting Update Persistence"
-
+echo -e "${BLUE}Injecting Persistence (Update Survival)...${NC}"
 SERVICE_FILE="/etc/systemd/system/x-ui.service"
 if [[ -f "$SERVICE_FILE" ]]; then
     if ! grep -q "XUI_DEBUG=true" "$SERVICE_FILE"; then
         sed -i '/\[Service\]/a Environment="XUI_DEBUG=true"' "$SERVICE_FILE"
-        echo -e "  ${GREEN}→${NC} Persistence injected successfully"
+        echo -e "${GREEN}Persistence injected successfully!${NC}"
     else
-        echo -e "  ${CYAN}→${NC} Persistence already enabled"
+        echo -e "${BLUE}Persistence already enabled.${NC}"
     fi
 fi
 
-step "Deploying System Stats Monitor"
+# --- STATS SERVICE DEPLOYMENT ---
+echo -e "${BLUE}Deploying System Stats Monitor Service...${NC}"
 
 STATS_SCRIPT="$XUI_ROOT/server_stats.sh"
 STATS_SERVICE="/etc/systemd/system/x-ui-stats.service"
@@ -307,19 +255,19 @@ EOF
 
 sed -i "s|__STATS_SCRIPT__|$STATS_SCRIPT|g" "$STATS_SERVICE"
 
-step "Finalizing Installation"
-
+# Enable and start service
 systemctl daemon-reload
 systemctl enable x-ui-stats.service >/dev/null 2>&1
 systemctl restart x-ui-stats.service
 
+# Verify service started
 if systemctl is-active --quiet x-ui-stats.service; then
-    echo -e "  ${GREEN}→${NC} Stats monitor running"
+    echo -e "${GREEN}✅ Stats monitor deployed and running${NC}"
 else
-    echo -e "  ${YELLOW}→${NC} Stats service deployed (may need manual start)"
+    echo -e "${YELLOW}⚠️  Stats service deployed but failed to start (stats grid will show 0%)${NC}"
 fi
 
-echo -e "  ${CYAN}→${NC} Restarting x-ui service..."
+echo -e "${BLUE}Refreshing systemd & Restarting x-ui...${NC}"
 systemctl daemon-reload
 if command -v x-ui &> /dev/null; then
     x-ui restart
@@ -327,20 +275,6 @@ else
     systemctl restart x-ui
 fi
 
-echo ""
-echo -e "${GREEN}╔══════════════════════════════════════════════════════════════╗${NC}"
-echo -e "${GREEN}║                                                              ║${NC}"
-echo -e "${GREEN}║   ${BOLD}✅ TMS-VPN INSTALLED SUCCESSFULLY!${NC}${GREEN}                        ║${NC}"
-echo -e "${GREEN}║                                                              ║${NC}"
-echo -e "${GREEN}╚══════════════════════════════════════════════════════════════╝${NC}"
-echo ""
-echo -e "${CYAN}  ${BOLD}Next Steps:${NC}"
-echo -e "  ${YELLOW}1.${NC} Open your 3x-ui panel in browser"
-echo -e "  ${YELLOW}2.${NC} Go to ${CYAN}Settings → Panel Settings → Subscription${NC}"
-echo -e "  ${YELLOW}3.${NC} Enable subscription and configure your settings"
-echo -e "  ${YELLOW}4.${NC} Access your dashboard at: ${GREEN}http://your-server:port/sub/${NC}"
-echo ""
-echo -e "${MAGENTA}  ${BOLD}Support:${NC} ${CYAN}https://github.com/ThilinaM99/3xui-Usage_Checker${NC}"
-echo -e "${YELLOW}  ──────────────────────────────────────────────────────────────${NC}"
+echo -e "${GREEN}✅ TMS-VPN Subscription Theme installed Successfully${NC}"
 echo -e "${GREEN}🔧 Turn on the Inbuilt Subscription System (If not enabled)${NC}"
 
