@@ -302,8 +302,14 @@
         <div class="countdown-item">
           <div class="countdown-circle">
             <svg viewBox="0 0 100 100">
-              <circle class="countdown-bg" cx="50" cy="50" r="45"></circle>
-              <circle class="countdown-progress" id="days-progress" cx="50" cy="50" r="45"></circle>
+              <defs>
+                <linearGradient id="countdown-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" style="stop-color:var(--accent)"/>
+                  <stop offset="100%" style="stop-color:var(--accent-hover)"/>
+                </linearGradient>
+              </defs>
+              <circle class="countdown-bg" cx="50" cy="50" r="40"></circle>
+              <circle class="countdown-progress" id="days-progress" cx="50" cy="50" r="40" style="stroke:var(--accent)"></circle>
             </svg>
             <div class="countdown-value" id="days-value">00</div>
           </div>
@@ -312,8 +318,8 @@
         <div class="countdown-item">
           <div class="countdown-circle">
             <svg viewBox="0 0 100 100">
-              <circle class="countdown-bg" cx="50" cy="50" r="45"></circle>
-              <circle class="countdown-progress" id="hours-progress" cx="50" cy="50" r="45"></circle>
+              <circle class="countdown-bg" cx="50" cy="50" r="40"></circle>
+              <circle class="countdown-progress" id="hours-progress" cx="50" cy="50" r="40" style="stroke:var(--accent)"></circle>
             </svg>
             <div class="countdown-value" id="hours-value">00</div>
           </div>
@@ -322,8 +328,8 @@
         <div class="countdown-item">
           <div class="countdown-circle">
             <svg viewBox="0 0 100 100">
-              <circle class="countdown-bg" cx="50" cy="50" r="45"></circle>
-              <circle class="countdown-progress" id="minutes-progress" cx="50" cy="50" r="45"></circle>
+              <circle class="countdown-bg" cx="50" cy="50" r="40"></circle>
+              <circle class="countdown-progress" id="minutes-progress" cx="50" cy="50" r="40" style="stroke:var(--accent)"></circle>
             </svg>
             <div class="countdown-value" id="minutes-value">00</div>
           </div>
@@ -332,8 +338,8 @@
         <div class="countdown-item">
           <div class="countdown-circle">
             <svg viewBox="0 0 100 100">
-              <circle class="countdown-bg" cx="50" cy="50" r="45"></circle>
-              <circle class="countdown-progress" id="seconds-progress" cx="50" cy="50" r="45"></circle>
+              <circle class="countdown-bg" cx="50" cy="50" r="40"></circle>
+              <circle class="countdown-progress" id="seconds-progress" cx="50" cy="50" r="40" style="stroke:var(--accent)"></circle>
             </svg>
             <div class="countdown-value" id="seconds-value">00</div>
           </div>
@@ -410,8 +416,8 @@
       const minsPct = minutes / 60;
       const secsPct = seconds / 60;
       
-      // Update stroke-dashoffset (circumference = 2 * PI * 45 ≈ 283)
-      const circumference = 283;
+      // Update stroke-dashoffset (circumference = 2 * PI * 40 ≈ 251)
+      const circumference = 251;
       
       if (daysProgress) daysProgress.style.strokeDashoffset = circumference * (1 - daysPct);
       if (hoursProgress) hoursProgress.style.strokeDashoffset = circumference * (1 - hoursPct);
