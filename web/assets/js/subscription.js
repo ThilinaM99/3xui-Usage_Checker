@@ -159,6 +159,12 @@
     startStatsPolling();
     setupOfflineDetection();
     cacheData();
+    
+    // Initialize notification system
+    if (window.xuiNotifications) {
+      window.xuiNotifications.init();
+    }
+    
     if (!window.statusLoop) {
       window.statusLoop = setInterval(updateStatus, 60000);
     }
@@ -1463,6 +1469,201 @@
       );
     }
   }
+  
+  // ===== NOTIFICATION SYSTEM =====
+  class NotificationManager {
+    constructor() {
+      this.container = null;
+      this.settings = this.loadSettings();
+      this.alertsShown = {};
+    }
+    
+    loadSettings() {
+      return JSON.parse(localStorage.getItem('xui_notification_settings')) || {
+        enableNotifications: true,
+        dataAlerts: true,
+        soundEnabled: false,
+        inAppNotifications: true
+      };
+    }
+    
+    saveSettings() {
+      localStorage.setItem('xui_notification_settings', JSON.stringify(this.settings));
+    }
+    
+    init() {
+      // Create notification container
+      if (!getEl('notification-container')) {
+        this.container = mkEl('div', 'notification-container');
+        this.container.id = 'notification-container';
+        document.body.appendChild(this.container);
+      } else {
+        this.container = getEl('notification-container');
+      }
+      
+      // Request browser notification permission
+      this.requestPermission();
+      
+      // Check for data usage alerts
+      this.checkDataAlerts();
+    }
+    
+    requestPermission() {
+      if ('Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission();
+      }
+    }
+    
+    getIcon(type) {
+      const icons = {
+        'info': '📊',
+        'warning': '⚠️',
+        'critical': '🚨',
+        'success': '✅'
+      };
+      return icons[type] || 'ℹ️';
+    }
+    
+    getCurrentTime() {
+      return new Date().toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+      });
+    }
+    
+    show(title, message, type = 'info', duration = 8000) {
+      if (!this.settings.enableNotifications || !this.settings.inAppNotifications) return;
+      
+      const id = Date.now();
+      const notification = mkEl('div', `in-app-notification ${type}`);
+      notification.id = `notification-${id}`;
+      
+      notification.innerHTML = `
+        <div class="notification-header">
+          <div class="notification-title">
+            <span class="notification-icon">${this.getIcon(type)}</span>
+            ${title}
+          </div>
+          <button class="notification-close" onclick="window.xuiNotifications.remove('${id}')">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+        <div class="notification-body">${message}</div>
+        <div class="notification-footer">
+          <span class="notification-time">${this.getCurrentTime()}</span>
+          <span class="notification-type">${type}</span>
+        </div>
+        <div class="notification-progress" style="animation-duration: ${duration}ms;"></div>
+      `;
+      
+      this.container.appendChild(notification);
+      
+      // Auto remove
+      setTimeout(() => this.remove(id), duration);
+      
+      // Limit to 4 notifications
+      while (this.container.children.length > 4) {
+        this.container.children[0].remove();
+      }
+      
+      // Also show browser notification
+      if ('Notification' in window && Notification.permission === 'granted' && this.settings.enableNotifications) {
+        new Notification(title, {
+          body: message,
+          icon: 'https://i.ibb.co/v4WPzWBb/image.png',
+          tag: `xui-${type}`,
+          silent: !this.settings.soundEnabled
+        });
+      }
+      
+      // Haptic feedback for critical alerts
+      if (type === 'critical' || type === 'warning') {
+        hapticVibrate(type === 'critical' ? 100 : 50);
+      }
+    }
+    
+    remove(id) {
+      const notification = getEl(`notification-${id}`);
+      if (notification) {
+        notification.classList.add('fade-out');
+        setTimeout(() => notification.remove(), 300);
+      }
+    }
+    
+    checkDataAlerts() {
+      if (!this.settings.dataAlerts || !STATE.raw) return;
+      
+      const status = getStatusInfo();
+      const pct = status.pct;
+      const used = formatBytes(status.used);
+      const total = formatBytes(status.total);
+      
+      // Get today's date for session tracking
+      const today = new Date().toDateString();
+      if (!this.alertsShown[today]) {
+        this.alertsShown[today] = {};
+      }
+      
+      // Show alerts based on usage percentage
+      if (pct >= 100 && !this.alertsShown[today]['100']) {
+        this.show(
+          'Data Limit Exceeded!',
+          `You've used 100% of your data limit (${used}/${total}). Connection may be limited.`,
+          'critical',
+          10000
+        );
+        this.alertsShown[today]['100'] = true;
+      } else if (pct >= 95 && !this.alertsShown[today]['95']) {
+        this.show(
+          'Data Usage Critical!',
+          `You've used ${Math.round(pct)}% of your data limit (${used}/${total}).`,
+          'critical',
+          8000
+        );
+        this.alertsShown[today]['95'] = true;
+      } else if (pct >= 90 && !this.alertsShown[today]['90']) {
+        this.show(
+          'Data Usage High',
+          `You've used ${Math.round(pct)}% of your data limit (${used}/${total}).`,
+          'warning',
+          6000
+        );
+        this.alertsShown[today]['90'] = true;
+      } else if (pct >= 75 && !this.alertsShown[today]['75']) {
+        this.show(
+          'Data Usage Alert',
+          `You've used ${Math.round(pct)}% of your data limit (${used}/${total}).`,
+          'info',
+          5000
+        );
+        this.alertsShown[today]['75'] = true;
+      }
+      
+      // Add visual indicator to progress bar
+      if (pct >= 90) {
+        const progressSection = document.querySelector('.progress-container');
+        if (progressSection && !progressSection.querySelector('.usage-alert-badge')) {
+          const badge = mkEl('div', `usage-alert-badge ${pct >= 95 ? 'critical' : 'warning'}`);
+          badge.textContent = '!';
+          badge.title = `${Math.round(pct)}% data used`;
+          progressSection.style.position = 'relative';
+          progressSection.appendChild(badge);
+        }
+      }
+    }
+    
+    updateSetting(key, value) {
+      this.settings[key] = value;
+      this.saveSettings();
+    }
+  }
+  
+  // Initialize notification manager
+  window.xuiNotifications = new NotificationManager();
   function updateStatus() {}
   if (document.readyState === "loading")
     document.addEventListener("DOMContentLoaded", init);
