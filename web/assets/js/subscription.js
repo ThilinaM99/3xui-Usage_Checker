@@ -240,6 +240,21 @@
     };
     themeBtn.id = "theme-btn";
     ctrls.appendChild(themeBtn);
+    
+    // Connection Quality Indicator
+    const qualityIndicator = mkEl("div", "connection-quality");
+    qualityIndicator.id = "connection-quality";
+    qualityIndicator.innerHTML = `
+      <div class="signal-bars">
+        <div class="signal-bar" data-level="1"></div>
+        <div class="signal-bar" data-level="2"></div>
+        <div class="signal-bar" data-level="3"></div>
+        <div class="signal-bar" data-level="4"></div>
+      </div>
+      <span class="quality-label" id="quality-label">--</span>
+    `;
+    ctrls.appendChild(qualityIndicator);
+    
     h.appendChild(profile);
     h.appendChild(ctrls);
     return h;
@@ -591,6 +606,57 @@
     el.textContent = tip;
     el.classList.add("pulse-insight");
     setTimeout(() => el.classList.remove("pulse-insight"), 1000);
+    
+    // Update connection quality indicator
+    updateConnectionQuality(totalSpeed, latency);
+  }
+  
+  function updateConnectionQuality(speed, latency) {
+    const container = getEl("connection-quality");
+    const label = getEl("quality-label");
+    if (!container) return;
+    
+    const bars = container.querySelectorAll(".signal-bar");
+    let level = 0;
+    let qualityText = "Poor";
+    let qualityColor = "#ef4444";
+    
+    // Calculate quality based on speed and latency
+    if (latency > 0 && latency < 50 && speed > 3) {
+      level = 4;
+      qualityText = "Excellent";
+      qualityColor = "#22c55e";
+    } else if (latency < 100 && speed > 1.5) {
+      level = 3;
+      qualityText = "Good";
+      qualityColor = "#84cc16";
+    } else if (latency < 200 && speed > 0.5) {
+      level = 2;
+      qualityText = "Fair";
+      qualityColor = "#eab308";
+    } else if (speed > 0) {
+      level = 1;
+      qualityText = "Weak";
+      qualityColor = "#f97316";
+    }
+    
+    bars.forEach((bar, i) => {
+      const barLevel = parseInt(bar.dataset.level);
+      if (barLevel <= level) {
+        bar.classList.add("active");
+        bar.style.background = qualityColor;
+        bar.style.boxShadow = `0 0 8px ${qualityColor}`;
+      } else {
+        bar.classList.remove("active");
+        bar.style.background = "";
+        bar.style.boxShadow = "";
+      }
+    });
+    
+    if (label) {
+      label.textContent = qualityText;
+      label.style.color = qualityColor;
+    }
   }
   function checkPing() {
     const valEl = getEl("ping-value"),
