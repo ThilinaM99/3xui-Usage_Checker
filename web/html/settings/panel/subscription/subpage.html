@@ -5,8 +5,8 @@
 <meta http-equiv="Expires" content="0" />
 
 <div id="premium-preloader">
-    <div class="loader-logo">TMS</div>
-    <div class="loader-text">Initializing TMS-VPN UI</div>
+    <div class="loader-logo">LG</div>
+    <div class="loader-text">Initializing Premium UI</div>
 </div>
 <script src="{{ .base_path }}assets/moment/moment.min.js"></script>
 <script src="{{ .base_path }}assets/moment/moment-jalali.min.js?{{ .cur_ver }}"></script>
@@ -120,81 +120,6 @@
     .dark.subscription-page .subscription-link-box:hover {
         background: rgba(0, 0, 0, 0.3);
         border-color: rgba(255, 255, 255, 0.2);
-    }
-
-    /* Expiry Countdown Styles */
-    .expiry-countdown-container {
-        margin: 20px 0;
-        text-align: center;
-        background: rgba(15, 23, 42, 0.6);
-        border-radius: 16px;
-        padding: 20px;
-        border: 1px solid rgba(255, 255, 255, 0.05);
-        backdrop-filter: blur(10px);
-    }
-
-    .countdown-header {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-        margin-bottom: 20px;
-        color: #94a3b8;
-        font-weight: 600;
-        font-size: 1.1rem;
-    }
-
-    .countdown-header svg {
-        color: #2dd4bf;
-    }
-
-    .countdown-grid {
-        display: flex;
-        justify-content: center;
-        gap: 12px;
-        flex-wrap: wrap;
-    }
-
-    .countdown-item {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 8px;
-        min-width: 70px;
-    }
-
-    .countdown-box {
-        width: 65px;
-        height: 65px;
-        background: linear-gradient(135deg, #2dd4bf, #0ea5e9);
-        border-radius: 14px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.8rem;
-        font-weight: 800;
-        color: white;
-        box-shadow: 0 8px 20px rgba(14, 165, 233, 0.3);
-        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    }
-
-    .countdown-label {
-        font-size: 0.75rem;
-        color: #64748b;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        font-weight: 600;
-    }
-
-    @media (max-width: 480px) {
-        .countdown-box {
-            width: 55px;
-            height: 55px;
-            font-size: 1.5rem;
-        }
-        .countdown-item {
-            min-width: 60px;
-        }
     }
 
     .light.subscription-page .subscription-link-box {
@@ -313,6 +238,14 @@
                                     ]]</a-descriptions-item>
                                 <a-descriptions-item v-if="app.totalByte > 0" label='{{ i18n "remained" }}'>[[
                                     app.remained ]]</a-descriptions-item>
+                                <a-descriptions-item label='{{ i18n "lastOnline" }}'>
+                                    <template v-if="app.lastOnlineMs > 0">
+                                        [[ IntlUtil.formatDate(app.lastOnlineMs) ]]
+                                    </template>
+                                    <template v-else>
+                                        <span>-</span>
+                                    </template>
+                                </a-descriptions-item>
                                 <a-descriptions-item label='{{ i18n "subscription.expiry" }}'>
                                     <template v-if="app.expireMs === 0">
                                         {{ i18n "subscription.noExpiry" }}
@@ -326,6 +259,22 @@
                     </a-form>
 
                     <br />
+                    <div v-for="(link, idx) in links" :key="link"
+                        style="position: relative; margin-bottom: 20px; text-align: center;">
+                        <div class="qr-box" style="display: inline-block; width: 100%; max-width: 100%;">
+                            <a-tag color="purple"
+                                style="margin-bottom: -10px; position: relative; z-index: 2; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+                                <span>[[ linkName(link, idx) ]]</span>
+                            </a-tag>
+                            <div @click="copy(link)" class="subscription-link-box">
+                                [[ link ]]
+                            </div>
+                        </div>
+                    </div>
+
+                    </div>
+                    <br />
+
                     <a-form layout="vertical">
                         <a-form-item>
                             <a-row type="flex" justify="center" :gutter="[8,8]" style="width:100%">

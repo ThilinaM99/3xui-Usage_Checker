@@ -6,28 +6,10 @@ GREEN='\033[0;32m'
 BLUE='\033[0;34m'
 NC='\033[0m'
 
-function show_art() {
-    echo -e "${BLUE}"
-    echo -e " ██████╗███████╗██████╗ ██╗███╗   ██╗ ██████╗ "
-    echo -e "██╔════╝██╔════╝██╔══██╗██║████╗  ██║██╔════╝ "
-    echo -e "██║     █████╗  ██████╔╝██║██╔██╗ ██║██║  ███╗"
-    echo -e "██║     ██╔══╝  ██╔══██╗██║██║╚██╗██║██║   ██║"
-    echo -e "╚██████╗███████╗██║  ██║██║██║ ╚████║╚██████╔╝"
-    echo -e " ╚═════╝╚══════╝╚═╝  ╚═╝╚═╝╚═╝  ╚═══╝ ╚═════╝ "
-    echo -e "                                              "
-    echo -e "      💎 TMS-VPN PREMIUM SUBSCRIPTION 💎      "
-    echo -e "           Installation v${VERSION}           "
-    echo -e "${NC}"
-}
-
-show_art
-sleep 1
-echo -e "${BLUE}🚀 Starting TMS-VPN Subscription Theme Installation...${NC}"
-echo -e "${RED}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -e "${BLUE}💎 Starting 3x-ui Subscription Theme Installation...${NC}"
 echo -e "${RED}⚠️  NOTICE: This project is for EDUCATIONAL PURPOSES ONLY.${NC}"
-echo -e "${RED}⚠️  The user is solely responsible for any consequences.${NC}"
+echo -e "${RED}⚠️  The user is solely responsible for any consequences or damages.${NC}"
 echo -e "${RED}⚠️  USE AT YOUR OWN RISK.${NC}"
-echo -e "${RED}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 sleep 2
 
 if [ "$EUID" -ne 0 ]; then
@@ -137,23 +119,15 @@ sed -i "s|__VERSION__|$TIMESTAMP|g" "$ASSETS_PATH/js/subscription.js"
 
 chmod -R 755 "$BASE_PATH"
 
-echo -e "${BLUE}Injecting Persistence (Update Survival) & Port Optimization...${NC}"
+echo -e "${BLUE}Injecting Persistence (Update Survival)...${NC}"
 SERVICE_FILE="/etc/systemd/system/x-ui.service"
 if [[ -f "$SERVICE_FILE" ]]; then
     if ! grep -q "XUI_DEBUG=true" "$SERVICE_FILE"; then
         sed -i '/\[Service\]/a Environment="XUI_DEBUG=true"' "$SERVICE_FILE"
         echo -e "${GREEN}Persistence injected successfully!${NC}"
+    else
+        echo -e "${BLUE}Persistence already enabled.${NC}"
     fi
-fi
-
-# Optimization: Ensure 2083 is open in firewall
-if command -v ufw &> /dev/null; then
-    ufw allow 2083/tcp >/dev/null 2>&1
-    echo -e "${GREEN}Firewall: Port 2083 allowed in UFW${NC}"
-elif command -v firewall-cmd &> /dev/null; then
-    firewall-cmd --permanent --add-port=2083/tcp >/dev/null 2>&1
-    firewall-cmd --reload >/dev/null 2>&1
-    echo -e "${GREEN}Firewall: Port 2083 allowed in Firewalld${NC}"
 fi
 
 # --- STATS SERVICE DEPLOYMENT ---
@@ -166,7 +140,7 @@ STATS_FILE="$XUI_ROOT/web/assets/css/status.json"
 # Create stats collector script
 cat <<"EOF" > "$STATS_SCRIPT"
 #!/bin/bash
-# System Stats Collector for TMS-VPN Premium Theme (Enhanced)
+# System Stats Collector for 3x-ui Premium Theme (Enhanced)
 JSON_FILE="__STATS_FILE__"
 ISP_CACHE="/usr/local/x-ui/isp_info.json"
 INTERVAL=2
@@ -265,7 +239,7 @@ chmod +x "$STATS_SCRIPT"
 # Create systemd service
 cat <<"EOF" > "$STATS_SERVICE"
 [Unit]
-Description=TMS-VPN System Stats Monitor
+Description=3x-ui System Stats Monitor
 After=network.target
 
 [Service]

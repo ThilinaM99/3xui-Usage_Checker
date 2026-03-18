@@ -50,7 +50,7 @@ sleep 2
 bash <(curl -Ls https://raw.githubusercontent.com/mhsanaei/3x-ui/master/install.sh)
 
 if [[ $? -eq 0 ]]; then
-    echo -e "${GREEN}✅ TMS-VPN restored to official version successfully.${NC}"
+    echo -e "${GREEN}✅ 3X-UI restored to official version successfully.${NC}"
 else
     echo -e "${RED}❌ Official restoration may have encountered an issue. Please check the logs above.${NC}"
 fi

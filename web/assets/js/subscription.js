@@ -163,50 +163,6 @@
     if (!window.networkBg) {
       window.networkBg = new NeuralNetwork();
     }
-    if (STATE.raw.expire > 0 && !window.expiryInterval) {
-      startExpiryCountdown();
-    }
-  }
-
-  function startExpiryCountdown() {
-    if (window.expiryInterval) return;
-
-    function update() {
-      const daysEl = document.getElementById("days");
-      const hoursEl = document.getElementById("hours");
-      const minutesEl = document.getElementById("minutes");
-      const secondsEl = document.getElementById("seconds");
-
-      if (!daysEl || !hoursEl || !minutesEl || !secondsEl) return;
-
-      const now = Date.now();
-      const diff = STATE.raw.expire - now;
-
-      if (diff <= 0) {
-        daysEl.textContent = "00";
-        hoursEl.textContent = "00";
-        minutesEl.textContent = "00";
-        secondsEl.textContent = "00";
-        if (window.expiryInterval) {
-          clearInterval(window.expiryInterval);
-          window.expiryInterval = null;
-        }
-        return;
-      }
-
-      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-
-      daysEl.textContent = days.toString().padStart(2, "0");
-      hoursEl.textContent = hours.toString().padStart(2, "0");
-      minutesEl.textContent = minutes.toString().padStart(2, "0");
-      secondsEl.textContent = seconds.toString().padStart(2, "0");
-    }
-
-    update();
-    window.expiryInterval = setInterval(update, 1000);
   }
   function renderApp() {
     const old = getEl("app-root");
@@ -215,45 +171,9 @@
     app.id = "app-root";
     app.appendChild(renderHeader());
     const grid = mkEl("div", "dashboard-grid");
-
-    // Force Expiry Countdown Section to the top
-    if (STATE.raw.expire > 0) {
-      const countdownWrap = mkEl("div", "span-12 expiry-countdown-container");
-      countdownWrap.style.gridColumn = "span 12";
-      countdownWrap.style.width = "100%";
-      countdownWrap.innerHTML = `
-        <div class="countdown-header-premium">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-          <span class="countdown-title-text">Subscription Security Period</span>
-        </div>
-        <div class="countdown-grid-premium">
-          <div class="countdown-item-premium">
-            <div class="countdown-box-premium" id="days">00</div>
-            <div class="countdown-label-premium">Days</div>
-          </div>
-          <div class="countdown-divider-premium">:</div>
-          <div class="countdown-item-premium">
-            <div class="countdown-box-premium" id="hours">00</div>
-            <div class="countdown-label-premium">Hours</div>
-          </div>
-          <div class="countdown-divider-premium">:</div>
-          <div class="countdown-item-premium">
-            <div class="countdown-box-premium" id="minutes">00</div>
-            <div class="countdown-label-premium">Minutes</div>
-          </div>
-          <div class="countdown-divider-premium">:</div>
-          <div class="countdown-item-premium">
-            <div class="countdown-box-premium" id="seconds">00</div>
-            <div class="countdown-label-premium">Seconds</div>
-          </div>
-        </div>
-      `;
-      grid.appendChild(countdownWrap);
-    }
-
     grid.appendChild(renderUsageCard());
     grid.appendChild(renderInfoCard());
-    // Configuration Links section removed
+    grid.appendChild(renderCountdownTimer());
     grid.appendChild(renderStatsGrid());
     grid.appendChild(renderInfrastructureSection());
     app.appendChild(grid);
@@ -264,7 +184,6 @@
     app.appendChild(renderQRModal());
     app.appendChild(renderToast());
     document.body.appendChild(app);
-
     requestAnimationFrame(() => {
       setTimeout(() => {
         document.body.classList.add("ready");
@@ -297,7 +216,7 @@
     dispName = cleanupName(dispName);
     const s = getStatusInfo();
     const profile = mkEl("div", "user-profile");
-    profile.innerHTML = `<div class="avatar-premium"><img src="https://i.ibb.co/v4WPzWBb/image.png" alt="T" class="logo-img"></div><div class="user-text-group"><div class="dashboard-title">User Dashboard</div><div class="user-main-row"><div class="username-display" data-text="${dispName}">${dispName}</div><div class="status-indicator-wrap"><span class="status-text-inline" style="color: ${s.color}">${s.label}</span><div class="status-dot-inline" style="background:${s.color}; box-shadow: 0 0 10px ${s.color}; border-color: ${s.color}44;"></div></div></div></div>`;
+    profile.innerHTML = `<div class="avatar">${dispName.substring(0, 1).toUpperCase()}</div><div class="user-text-group"><div class="dashboard-title">User Dashboard</div><div class="user-main-row"><div class="username-display" data-text="${dispName}">${dispName}</div><div class="status-indicator-wrap"><span class="status-text-inline" style="color: ${s.color}">${s.label}</span><div class="status-dot-inline" style="background:${s.color}; box-shadow: 0 0 10px ${s.color}; border-color: ${s.color}44;"></div></div></div></div>`;
     const ctrls = mkEl("div", "controls");
     ctrls.style.position = "relative";
     ctrls.style.zIndex = "200";
@@ -324,30 +243,7 @@
     const card = mkEl("div", "span-8 usage-overview");
     const s = getStatusInfo();
     const limitHtml = s.total === 0 ? `<span class="glitch-text" data-text="${t("unlimited")}">${t("unlimited")}</span>` : formatBytes(s.total);
-    card.innerHTML = `
-      <div class="usage-header">
-        <span class="usage-title">Data Usage Metrics</span>
-        <div class="usage-status-group">
-          <span class="usage-percentage">${s.pct.toFixed(1)}%</span>
-        </div>
-      </div>
-      <div class="usage-main-content">
-        <div class="usage-big-number" id="usage-val">0 B</div>
-        <div class="live-visualizer-container">
-          <canvas id="traffic-waveform"></canvas>
-          <div class="visualizer-overlay"></div>
-        </div>
-      </div>
-      <div class="progress-container">
-        <div class="progress-bar ${s.total === 0 ? "unlimited-bar" : ""}" id="prog-bar" style="transform:translateX(${s.total === 0 ? "0" : "-100%"});">
-          <div class="bloom"></div>
-        </div>
-      </div>
-      <div class="usage-footer">
-        <div class="usage-sub">${t("limit")}: ${limitHtml}</div>
-        <div id="smart-insight" class="insight-pill">Analyzing connection...</div>
-      </div>
-    `;
+    card.innerHTML = `<div class="usage-header"><span class="usage-title">Data Usage Metrics</span><span class="usage-title">${s.pct.toFixed(1)}%</span></div><div class="usage-big-number" id="usage-val">0 B</div><div class="progress-container"><div class="progress-bar ${s.total === 0 ? "unlimited-bar" : ""}" id="prog-bar" style="transform:translateX(${s.total === 0 ? "0" : "-100%"});"><div class="bloom"></div></div></div><div class="usage-sub">${t("limit")}: ${limitHtml}</div>`;
     return card;
   }
   function renderInfoCard() {
@@ -371,47 +267,165 @@
     up.innerHTML = `<div class="stat-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--theme-up)"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg></div><div class="stat-value" id="up-total-val">0 B</div><div class="stat-label">${t("upload")}</div>`;
     const down = mkEl("div", "stat-mini");
     down.innerHTML = `<div class="stat-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--theme-down)"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg></div><div class="stat-value" id="down-total-val">0 B</div><div class="stat-label">${t("download")}</div>`;
+    const lastOnline = mkEl("div", "stat-mini");
+    let lastOnlineText = "Never";
+    if (STATE.raw.lastOnline > 0) {
+      const now = Date.now(),
+        diff = now - STATE.raw.lastOnline,
+        minutes = Math.floor(diff / (1000 * 60)),
+        hours = Math.floor(diff / (1000 * 60 * 60)),
+        days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      if (minutes < 1) lastOnlineText = "Just now";
+      else if (minutes < 60) lastOnlineText = minutes + "m ago";
+      else if (hours < 24) lastOnlineText = hours + "h ago";
+      else lastOnlineText = days + "d ago";
+    }
+    lastOnline.innerHTML = `<div class="stat-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--status-online)"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg></div><div class="stat-value">${lastOnlineText}</div><div class="stat-label">Last Online</div>`;
     card.appendChild(up);
     card.appendChild(down);
     card.appendChild(rem);
     card.appendChild(exp);
+    card.appendChild(lastOnline);
     return card;
   }
-  function renderNodesList() {
-    const wrap = mkEl("div", "span-12");
-    wrap.innerHTML = `<div class="nodes-header"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg> Configuration Links</div>`;
-    const grid = mkEl("div", "node-grid");
-    const links =
-      getEl("subscription-links")?.value.split("\n").filter(Boolean) || [];
-    links.forEach((link, i) => {
-      grid.appendChild(renderNode(link, i));
-    });
-    wrap.appendChild(grid);
+  function renderCountdownTimer() {
+    const wrap = mkEl("div", "span-12 countdown-wrapper");
+    wrap.innerHTML = `
+      <div class="countdown-header">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+          <polyline points="12 6 12 12 16 14"></polyline>
+        </svg>
+        Subscription Expires In
+      </div>
+      <div class="countdown-grid">
+        <div class="countdown-item">
+          <div class="countdown-circle">
+            <svg viewBox="0 0 100 100">
+              <circle class="countdown-bg" cx="50" cy="50" r="45"></circle>
+              <circle class="countdown-progress" id="days-progress" cx="50" cy="50" r="45"></circle>
+            </svg>
+            <div class="countdown-value" id="days-value">00</div>
+          </div>
+          <div class="countdown-label">Days</div>
+        </div>
+        <div class="countdown-item">
+          <div class="countdown-circle">
+            <svg viewBox="0 0 100 100">
+              <circle class="countdown-bg" cx="50" cy="50" r="45"></circle>
+              <circle class="countdown-progress" id="hours-progress" cx="50" cy="50" r="45"></circle>
+            </svg>
+            <div class="countdown-value" id="hours-value">00</div>
+          </div>
+          <div class="countdown-label">Hours</div>
+        </div>
+        <div class="countdown-item">
+          <div class="countdown-circle">
+            <svg viewBox="0 0 100 100">
+              <circle class="countdown-bg" cx="50" cy="50" r="45"></circle>
+              <circle class="countdown-progress" id="minutes-progress" cx="50" cy="50" r="45"></circle>
+            </svg>
+            <div class="countdown-value" id="minutes-value">00</div>
+          </div>
+          <div class="countdown-label">Minutes</div>
+        </div>
+        <div class="countdown-item">
+          <div class="countdown-circle">
+            <svg viewBox="0 0 100 100">
+              <circle class="countdown-bg" cx="50" cy="50" r="45"></circle>
+              <circle class="countdown-progress" id="seconds-progress" cx="50" cy="50" r="45"></circle>
+            </svg>
+            <div class="countdown-value" id="seconds-value">00</div>
+          </div>
+          <div class="countdown-label">Seconds</div>
+        </div>
+      </div>
+    `;
+    
+    // Start countdown
+    setTimeout(() => startCountdown(), 100);
+    
     return wrap;
   }
-  function renderNode(link, idx) {
-    let proto = link.split("://")[0].toUpperCase(),
-      name = "Node " + (idx + 1);
-    try {
-      if (link.includes("#")) {
-        name = cleanupName(link.split("#")[1]);
-      } else if (proto === "VMESS") {
-        const b = JSON.parse(atob(link.replace("vmess://", "")));
-        if (b.ps) name = cleanupName(b.ps);
+  
+  function startCountdown() {
+    const expireTime = STATE.raw.expire;
+    
+    if (!expireTime || expireTime <= 0) {
+      // No expiry set - show unlimited
+      const daysEl = getEl("days-value");
+      const hoursEl = getEl("hours-value");
+      const minsEl = getEl("minutes-value");
+      const secsEl = getEl("seconds-value");
+      if (daysEl) daysEl.textContent = "∞";
+      if (hoursEl) hoursEl.textContent = "∞";
+      if (minsEl) minsEl.textContent = "∞";
+      if (secsEl) secsEl.textContent = "∞";
+      return;
+    }
+    
+    function updateCountdown() {
+      const now = Date.now();
+      const diff = expireTime - now;
+      
+      if (diff <= 0) {
+        // Expired
+        const daysEl = getEl("days-value");
+        const hoursEl = getEl("hours-value");
+        const minsEl = getEl("minutes-value");
+        const secsEl = getEl("seconds-value");
+        if (daysEl) daysEl.textContent = "00";
+        if (hoursEl) hoursEl.textContent = "00";
+        if (minsEl) minsEl.textContent = "00";
+        if (secsEl) secsEl.textContent = "00";
+        return;
       }
-    } catch (e) {}
-    const card = mkEl("div", "node-card");
-    card.style.animationDelay = 0.3 + idx * 0.04 + "s";
-    card.innerHTML = `<div class="node-info"><span class="proto-badge">${proto}</span><span class="node-name">${name}</span></div><div class="node-actions" style="display:flex; gap:8px;"><div class="icon-btn-mini" id="btn-copy-${idx}" title="Copy Config"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></div><div class="icon-btn-mini" id="btn-qr-${idx}" title="Show QR"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg></div></div>`;
-    card.querySelector(`#btn-copy-${idx}`).onclick = (e) => {
-      e.stopPropagation();
-      copy(link);
-    };
-    card.querySelector(`#btn-qr-${idx}`).onclick = (e) => {
-      e.stopPropagation();
-      showQR(link, name);
-    };
-    return card;
+      
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+      
+      // Update values
+      const daysEl = getEl("days-value");
+      const hoursEl = getEl("hours-value");
+      const minsEl = getEl("minutes-value");
+      const secsEl = getEl("seconds-value");
+      
+      if (daysEl) daysEl.textContent = String(days).padStart(2, "0");
+      if (hoursEl) hoursEl.textContent = String(hours).padStart(2, "0");
+      if (minsEl) minsEl.textContent = String(minutes).padStart(2, "0");
+      if (secsEl) secsEl.textContent = String(seconds).padStart(2, "0");
+      
+      // Update progress circles
+      const daysProgress = getEl("days-progress");
+      const hoursProgress = getEl("hours-progress");
+      const minsProgress = getEl("minutes-progress");
+      const secsProgress = getEl("seconds-progress");
+      
+      // Calculate max values for progress
+      const maxDays = 365; // Assume max 1 year
+      const daysPct = Math.min(days / maxDays, 1);
+      const hoursPct = hours / 24;
+      const minsPct = minutes / 60;
+      const secsPct = seconds / 60;
+      
+      // Update stroke-dashoffset (circumference = 2 * PI * 45 ≈ 283)
+      const circumference = 283;
+      
+      if (daysProgress) daysProgress.style.strokeDashoffset = circumference * (1 - daysPct);
+      if (hoursProgress) hoursProgress.style.strokeDashoffset = circumference * (1 - hoursPct);
+      if (minsProgress) minsProgress.style.strokeDashoffset = circumference * (1 - minsPct);
+      if (secsProgress) secsProgress.style.strokeDashoffset = circumference * (1 - secsPct);
+    }
+    
+    // Initial update
+    updateCountdown();
+    
+    // Update every second
+    if (!window.countdownInterval) {
+      window.countdownInterval = setInterval(updateCountdown, 1000);
+    }
   }
   function renderInfrastructureSection() {
     const wrap = mkEl("div", "span-12");
@@ -420,7 +434,7 @@
     const hosting = mkEl("div", "infra-card");
     hosting.innerHTML = `<div class="infra-icon" id="infra-isp-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color:var(--theme-isp)"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg></div><div class="infra-details"><div class="infra-value" id="infra-isp">${STATE.raw.isp}</div><div class="infra-label">Provider</div></div>`;
     const locCard = mkEl("div", "infra-card");
-    locCard.innerHTML = `<div class="infra-icon" id="infra-loc-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color:var(--theme-loc)"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg></div><div class="infra-details"><div class="infra-value" id="infra-loc">${STATE.raw.location}</div><div class="infra-label">Region</div></div><div class="mini-map-container"><canvas id="mini-map"></canvas><div class="map-pulse"></div></div>`;
+    locCard.innerHTML = `<div class="infra-icon" id="infra-loc-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color:var(--theme-loc)"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg></div><div class="infra-details"><div class="infra-value" id="infra-loc">${STATE.raw.location}</div><div class="infra-label">Region</div></div>`;
     const ping = mkEl("div", "infra-card");
     ping.innerHTML = `<div class="infra-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color:var(--theme-ping)"><path d="M5 12.55a11 11 0 0 1 14.08 0"></path><path d="M1.42 9a16 16 0 0 1 21.16 0"></path><path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path><line x1="12" y1="20" x2="12.01" y2="20"></line></svg></div><div class="infra-details"><div class="infra-value" id="ping-value">Check Latency</div><div class="infra-label">Client to Server</div></div><div class="ping-action-wrap"><div class="ping-dot" id="ping-dot"></div><div class="icon-btn-mini" id="btn-ping" title="Check Ping"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg></div></div>`;
     ping.querySelector("#btn-ping").onclick = () => checkPing();
@@ -439,10 +453,10 @@
     cpuCard.innerHTML = `<div class="stat-mini-icon" style="color:var(--theme-cpu)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 1v3M15 1v3M9 20v3M15 20v3M20 9h3M20 14h3M1 9h3M1 14h3"/></svg></div><div class="stat-mini-content"><div class="stat-mini-label">CPU Usage</div><div class="stat-mini-value"><span id="cpu-val">0</span>%</div></div>`;
     const ramCard = mkEl("div", "stat-card-mini");
     ramCard.innerHTML = `<div class="stat-mini-icon" style="color:var(--theme-ram)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 6h16M4 12h16M4 18h16M8 2v20M12 2v20M16 2v20"/></svg></div><div class="stat-mini-content"><div class="stat-mini-label">Memory</div><div class="stat-mini-value"><span id="ram-val">0</span>%</div></div>`;
-    const downloadCard = mkEl("div", "stat-card-mini");
-    downloadCard.innerHTML = `<div class="stat-mini-icon" style="color:var(--theme-down)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="8 12 12 16 16 12"/><line x1="12" y1="16" x2="12" y2="3"/><path d="M20.88 18.09A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg></div><div class="stat-mini-content"><div class="stat-mini-label">Download</div><div class="stat-mini-value" id="download-val">0 KB/s</div></div>`;
     const uploadCard = mkEl("div", "stat-card-mini");
     uploadCard.innerHTML = `<div class="stat-mini-icon" style="color:var(--theme-up)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg></div><div class="stat-mini-content"><div class="stat-mini-label">Upload</div><div class="stat-mini-value" id="upload-val">0 KB/s</div></div>`;
+    const downloadCard = mkEl("div", "stat-card-mini");
+    downloadCard.innerHTML = `<div class="stat-mini-icon" style="color:var(--theme-down)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="8 12 12 16 16 12"/><line x1="12" y1="16" x2="12" y2="3"/><path d="M20.88 18.09A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg></div><div class="stat-mini-content"><div class="stat-mini-label">Download</div><div class="stat-mini-value" id="download-val">0 KB/s</div></div>`;
     grid.appendChild(cpuCard);
     grid.appendChild(ramCard);
     grid.appendChild(uploadCard);
@@ -450,383 +464,6 @@
     wrap.appendChild(grid);
     return wrap;
   }
-
-  /* Expiry Countdown Styles Integrated into Premium Theme */
-  const countdownStyles = `
-  .usage-overview {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    justify-content: center;
-    min-height: 180px;
-    position: relative;
-    overflow: hidden;
-  }
-
-  .usage-main-content {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-end;
-    gap: 20px;
-    position: relative;
-    z-index: 2;
-  }
-
-  .live-visualizer-container {
-    flex: 1;
-    height: 60px;
-    position: relative;
-    max-width: 250px;
-  }
-
-  #traffic-waveform {
-    width: 100%;
-    height: 100%;
-    filter: drop-shadow(0 0 8px var(--accent-glow));
-  }
-
-  .usage-footer {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 12px;
-    margin-top: 4px;
-  }
-
-  .insight-pill {
-    padding: 6px 14px;
-    background: rgba(var(--node-color, 99, 102, 241), 0.1);
-    border: 1px solid var(--card-border);
-    border-radius: 100px;
-    font-size: 0.75rem;
-    font-weight: 700;
-    color: var(--accent);
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    transition: all 0.3s ease;
-    white-space: nowrap;
-  }
-
-  .pulse-insight {
-    animation: insight-pulse 1s ease-out;
-  }
-
-  @keyframes insight-pulse {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.05); background: rgba(var(--node-color, 99, 102, 241), 0.2); }
-    100% { transform: scale(1); }
-  }
-
-  .mini-map-container {
-    width: 80px;
-    height: 60px;
-    background: rgba(0, 0, 0, 0.2);
-    border-radius: 12px;
-    border: 1px solid var(--card-border);
-    overflow: hidden;
-    pointer-events: none;
-    margin-left: auto;
-    flex-shrink: 0;
-  }
-
-  .infra-card {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    background: var(--card-bg);
-    border: 1px solid var(--card-border);
-    border-radius: 16px;
-    padding: 16px;
-    transition: all 0.3s var(--ease-out);
-    position: relative;
-    overflow: hidden;
-  }
-
-  .infra-details {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-  }
-
-  .infra-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 16px;
-  }
-
-  @media (max-width: 900px) {
-    .infra-grid {
-      grid-template-columns: 1fr;
-    }
-  }
-
-
-  #mini-map {
-    width: 100%;
-    height: 100%;
-    opacity: 0.6;
-  }
-
-  .map-pulse {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 4px;
-    height: 4px;
-    background: #fff;
-    border-radius: 50%;
-    box-shadow: 0 0 10px var(--accent);
-  }
-
-  .expiry-countdown-container {
-    background: var(--bg-card);
-    border: 1px solid var(--card-border);
-    padding: 24px;
-    margin-bottom: 8px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 20px;
-    position: relative;
-    overflow: hidden;
-  }
-
-  .countdown-header-premium {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    color: var(--accent);
-    filter: drop-shadow(0 0 8px var(--accent-glow));
-  }
-
-  .countdown-title-text {
-    font-size: 0.85rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.15em;
-  }
-
-  .countdown-grid-premium {
-    display: flex;
-    justify-content: center;
-    gap: 16px;
-    flex-wrap: wrap;
-    width: 100%;
-  }
-
-  .countdown-item-premium {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 6px;
-    min-width: 70px;
-  }
-
-  .countdown-box-premium {
-    background: rgba(0, 0, 0, 0.3);
-    border: 1px solid var(--card-border);
-    color: var(--text-primary);
-    font-family: 'SF Mono', 'Roboto Mono', monospace;
-    font-size: 1.8rem;
-    font-weight: 800;
-    padding: 10px 15px;
-    border-radius: 12px;
-    min-width: 65px;
-    text-align: center;
-    box-shadow: inset 0 2px 10px rgba(0,0,0,0.5);
-    text-shadow: 0 0 15px var(--accent-glow);
-    transition: all 0.3s ease;
-  }
-
-  body.s-light .countdown-box-premium {
-    background: rgba(255, 255, 255, 0.5);
-    color: var(--text-primary);
-    box-shadow: inset 0 2px 5px rgba(0,0,0,0.1);
-    text-shadow: none;
-  }
-
-  .avatar-premium {
-    width: 64px;
-    height: 64px;
-    border-radius: 18px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
-    background: rgba(var(--node-color, 99, 102, 241), 0.1);
-    border: 1px solid var(--card-border);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
-    transition: all 0.3s var(--ease-out);
-  }
-
-  .avatar-premium:hover {
-    transform: scale(1.05) rotate(2deg);
-    border-color: var(--accent);
-    box-shadow: 0 12px 32px var(--accent-glow);
-  }
-
-  .logo-img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    filter: drop-shadow(0 0 4px rgba(0,0,0,0.2));
-  }
-
-  @media (max-width: 600px) {
-    .avatar-premium {
-      width: 52px;
-      height: 52px;
-      border-radius: 14px;
-    }
-  }
-
-  .countdown-divider-premium {
-    font-size: 2rem;
-    font-weight: 800;
-    color: var(--accent);
-    padding-top: 10px;
-    align-self: flex-start;
-    display: flex;
-    align-items: center;
-    height: 65px;
-  }
-
-  .countdown-label-premium {
-    font-size: 0.7rem;
-    font-weight: 700;
-    color: var(--text-secondary);
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-  }
-
-  @media (max-width: 600px) {
-    .countdown-divider-premium {
-      display: none;
-    }
-    .countdown-grid-premium {
-      gap: 10px;
-    }
-    .countdown-box-premium {
-      font-size: 1.4rem;
-      min-width: 50px;
-      padding: 8px 10px;
-    }
-  }
-  `;
-
-  if (!document.getElementById('countdown-styles')) {
-    const styleSheet = document.createElement("style");
-    styleSheet.id = "countdown-styles";
-    styleSheet.innerText = countdownStyles;
-    document.head.appendChild(styleSheet);
-  }
-
-  function updateTrafficWaveform(up, down) {
-    const canvas = getEl("traffic-waveform");
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!window._waveformPoints) window._waveformPoints = [];
-    
-    // Add current speed to points (normalize to some extent)
-    const totalSpeed = (up + down) / 1024; // MB/s ish for scaling
-    window._waveformPoints.push(totalSpeed);
-    if (window._waveformPoints.length > 50) window._waveformPoints.shift();
-
-    const dpr = window.devicePixelRatio || 1;
-    canvas.width = canvas.offsetWidth * dpr;
-    canvas.height = canvas.offsetHeight * dpr;
-    ctx.scale(dpr, dpr);
-
-    ctx.clearRect(0, 0, canvas.offsetWidth, canvas.offsetHeight);
-    ctx.beginPath();
-    ctx.strokeStyle = getComputedStyle(document.body).getPropertyValue("--accent").trim() || "#6366f1";
-    ctx.lineWidth = 2;
-    ctx.lineJoin = "round";
-
-    const step = canvas.offsetWidth / 49;
-    window._waveformPoints.forEach((p, i) => {
-      const x = i * step;
-      const h = Math.min(canvas.offsetHeight * 0.8, p * 10 + 2); // basic scaling
-      const y = canvas.offsetHeight - h;
-      if (i === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
-    });
-    ctx.stroke();
-    
-    // Restoration: Restore the missing updateMiniMap function call
-    updateMiniMap();
-  }
-
-  function updateMiniMap() {
-    const canvas = getEl("mini-map");
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    const dpr = window.devicePixelRatio || 1;
-    canvas.width = canvas.offsetWidth * dpr;
-    canvas.height = canvas.offsetHeight * dpr;
-    ctx.scale(dpr, dpr);
-    
-    ctx.clearRect(0, 0, canvas.offsetWidth, canvas.offsetHeight);
-    ctx.strokeStyle = "rgba(148, 163, 184, 0.2)";
-    ctx.lineWidth = 1;
-    
-    // Draw very simplified world map grid
-    for(let i=0; i<canvas.offsetWidth; i+=10) {
-      ctx.beginPath();
-      ctx.moveTo(i, 0);
-      ctx.lineTo(i, canvas.offsetHeight);
-      ctx.stroke();
-    }
-    for(let i=0; i<canvas.offsetHeight; i+=10) {
-      ctx.beginPath();
-      ctx.moveTo(0, i);
-      ctx.lineTo(canvas.offsetWidth, i);
-      ctx.stroke();
-    }
-
-    // Glowing Pulse at center (representing server)
-    const centerX = canvas.offsetWidth / 2;
-    const centerY = canvas.offsetHeight / 2;
-    const time = Date.now() / 1000;
-    const pulseSize = 5 + Math.sin(time * 4) * 3;
-    
-    const grad = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, pulseSize * 2);
-    const accent = getComputedStyle(document.body).getPropertyValue("--accent").trim() || "#10b981";
-    grad.addColorStop(0, accent);
-    grad.addColorStop(1, "rgba(0,0,0,0)");
-    
-    ctx.fillStyle = grad;
-    ctx.beginPath();
-    ctx.arc(centerX, centerY, pulseSize * 2, 0, Math.PI * 2);
-    ctx.fill();
-    
-    ctx.fillStyle = "#fff";
-    ctx.beginPath();
-    ctx.arc(centerX, centerY, 3, 0, Math.PI * 2);
-    ctx.fill();
-  }
-
-  function updateSmartInsights(up, down, cpu, ram) {
-    const el = getEl("smart-insight");
-    if (!el) return;
-    let tip = "Connection Stable";
-    const totalSpeed = (up + down) / 1024; // MB/s
-
-    if (totalSpeed > 5) tip = "Optimal for 4K Streaming 🎬";
-    else if (totalSpeed > 2) tip = "Great for HD Video 📺";
-    
-    const latency = parseInt(getEl("ping-value")?.textContent) || 0;
-    if (latency > 0 && latency < 100) tip = "Perfect for Gaming 🎮";
-    
-    if (cpu > 80 || ram > 80) tip = "Server Under Heavy Load ⚠️";
-
-    el.textContent = tip;
-    el.classList.add("pulse-insight");
-    setTimeout(() => el.classList.remove("pulse-insight"), 1000);
-  }
-
   function startStatsPolling() {
     if (window.statsPollingActive) return;
     window.statsPollingActive = true;
@@ -843,17 +480,9 @@
           if (ramEl) ramEl.textContent = data.ram || 0;
           const uploadEl = getEl("upload-val"),
             downloadEl = getEl("download-val");
-          
-          const upSpeed = data.net_out || 0;
-          const downSpeed = data.net_in || 0;
-          
-          if (uploadEl) uploadEl.textContent = formatSpeed(upSpeed);
-          if (downloadEl) downloadEl.textContent = formatSpeed(downSpeed);
-
-          // Update Waveform and Insights
-          updateTrafficWaveform(upSpeed, downSpeed);
-          updateSmartInsights(upSpeed, downSpeed, data.cpu, data.ram);
-
+          if (uploadEl) uploadEl.textContent = formatSpeed(data.net_out || 0);
+          if (downloadEl)
+            downloadEl.textContent = formatSpeed(data.net_in || 0);
           if (data.isp) {
             const ispEl = getEl("infra-isp");
             if (ispEl) ispEl.textContent = data.isp;
